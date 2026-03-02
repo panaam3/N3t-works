@@ -28,7 +28,7 @@ class User_management:
     def join(self, user, groupID):
         pass
 
-    def exit(self, user):
+    def exit(self, user, groupID):
         pass
 
     def connect_client(self, user1, user2):

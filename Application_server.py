@@ -3,6 +3,7 @@ from socket import *
 from User_Management import User_management as usm
 from User_Management import Database_manager as database
 import json
+from datetime import datetime
 
 class Server:
     def __init__(self):
@@ -86,7 +87,7 @@ class Server:
 
     def parse_json(self, raw_json):
         try:
-            # 1Convert JSON string → Python dict
+            # Convert JSON string Python dict
             message = json.loads(raw_json)
 
             header = message.get("header", {})
@@ -99,7 +100,7 @@ class Server:
             timestamp = header.get("timestamp")
             body_length = header.get("bodyLength", 0)
 
-            # Convert body dictionary → tuple of values
+            # Convert body dictionary tuple of values
             # If bodyLength = 0, return empty tuple
             if body_length == 0 or not body:
                 body_tuple = ()
@@ -113,6 +114,44 @@ class Server:
 
         except Exception as e:
             raise ValueError(f"Malformed MMMP message: {e}")
+        
+
+
+    def build_message(self, msg_type, command, sender_id, body=None, seq_no=None, status_code=None):
+        # Default empty body
+        if body is None:
+            body = {}
+
+        # Convert body to JSON string to calculate byte length
+        body_json = json.dumps(body)
+        body_length = len(body_json.encode()) if body else 0
+
+        header = {
+            "msgType": msg_type,
+            "command": command,
+            "version": "MMMP/1.0",
+            "senderId": sender_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "bodyLength": body_length
+        }
+
+        # Optional fields
+        if seq_no is not None:
+            header["seqNo"] = seq_no
+
+        if status_code is not None:
+            header["status_code"] = status_code
+
+        message = {
+            "header": header
+        }
+
+        # Only include body if it exists
+        if body_length > 0:
+            message["body"] = body
+
+        # Convert dict JSON string bytes (ready for TCP send)
+        return json.dumps(message).encode()
 
     def terminate(self):
         self.connection_socket.close()
