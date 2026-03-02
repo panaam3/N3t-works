@@ -26,18 +26,45 @@ class Server:
     
     """
 
-    def response(self, request):
+    def response(self, command, data = ()):
 
-        requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE",5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST"}
+        requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE", 5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST", 8:"GTEXT_MESSAGE"}
 
         # user functions
         login = lambda x, y:self.user_man.login(x, y)
-        logout = lambda user:self.user_man.logout(user)
         register = lambda x, y: self.user_man.register(x, y)
         logout = lambda user:self.user_man.logout(user) 
-        join = lambda user:self.user_man.join(user)
+        join = lambda user:self.user_man.join(user, groupID)
         exit = lambda user:self.user_man.exit(user)
         connect_request = lambda user1, user2 :self.user_man.connect_client(user1, user2)
+        group_message = lambda user1, text :self.user_man.group_chat(user1, text)
+        create = lambda user, name, chat:self.user_man.create(user, name, chat)
+
+
+        if command==requests.get(1): 
+            x, y = data
+            ack_responce = login(x, y)
+            return ack_responce
+        
+        if command==requests.get(2): 
+            user,  = data
+            ack_responce = logout(user)
+            return ack_responce
+        
+        if command==requests.get(3): 
+            x, y = data
+            ack_responce = register(x, y)
+            return ack_responce
+        
+        if command==requests.get(4): 
+            user, name, members = data
+            ack_responce = create(user, name, members)
+            return ack_responce
+        
+        if command==requests.get(5): 
+            x, y = data
+            ack_responce = login(x, y)
+            return ack_responce        
 
 
     def terminate(self):
