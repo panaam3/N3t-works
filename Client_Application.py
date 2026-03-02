@@ -5,6 +5,16 @@ class client:
         pass
 
 
+
+class User:
+    def __init__(self, name, ip_adrr):
+        self.name = name
+        self.ip = ip_adrr
+
+    def get_user(self):
+        return (self.name, self.ip)
+    
+
 """
 
 1. command message: 
