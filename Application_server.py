@@ -28,7 +28,7 @@ class Server:
 
     def response(self, request):
 
-        requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"JOIN", 5:"EXIT", 6:"CONNECT_REQUEST"}
+        requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE",5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST"}
 
         # user functions
         login = lambda x, y:self.user_man.login(x, y)
@@ -42,3 +42,61 @@ class Server:
 
     def terminate(self):
         self.connection_socket.close()
+
+
+
+"""
+
+1. command message: 
+{
+  "header": {
+    "msgType": "COMMAND",
+    "command": "CREATE",
+    "version": "MMMP/1.0",
+    "seqNo": 2001,
+    "senderId": "client_23",
+    "timestamp": "2026-02-27T10:02:15Z",
+    "bodyLength": 32
+  },
+  "body": {
+    "group-name": "csc3002f",
+    "members":["client_232", "client_222"]
+  }
+}
+
+2. control message example
+
+{
+  "header": {
+    "msgType": "CONTROL",
+    "command": "ACK",
+    "status_code":2,
+    "version": "MMMP/1.0",
+    "seqNo": 2001,
+    "senderId": "server",
+    "timestamp": "2026-02-27T10:02:15Z",
+    "bodyLength": 0
+  }
+}
+
+
+3. Data message
+
+{
+  "header": {
+    "msgType": "DATA",
+    "command": "GTEXT_MESSAGE",
+    "version": "MMMP/1.0",
+    "seqNo": 2002,
+    "senderId": "client_23"
+    "timestamp": "2026-02-27T10:02:15Z",
+    "bodyLength": 32
+  },
+  "body": {
+    "group-name": "csc3002f",
+    "message":"Hello everyone."
+  }
+}
+
+
+"""

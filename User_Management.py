@@ -1,7 +1,7 @@
 # User Management
 
 import pandas as pd
-
+import random
 
 class User_management:
     def __init__(self):
@@ -11,15 +11,15 @@ class User_management:
         self.online_users.append(user)
 
     def login(self, user, password):
-        
+
         pass
 
     def logout(self, user):
         
         pass
 
-    def create(self, user, password):
-        # Create a client-to-client & group chat
+    def create(self, user, chat = []):
+        # Create a Group chat
         pass
 
     def register(self, user, password):
@@ -34,6 +34,16 @@ class User_management:
     def connect_client(self, user1, user2):
         pass
 
+
+class User:
+    def __init__(self, name, ip_adrr):
+        self.name = name
+        self.ip = ip_adrr
+
+    def get_user(self):
+        return (self.name, self.ip)
+    
+    
 class Database_manager:
     def __init__(self):
         server_data = pd.read_csv()
