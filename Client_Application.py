@@ -3,7 +3,18 @@
 class client:
     def __init__(self):
         pass
+    def send_command(self, command, body):
+        # send command message to the server
+        pass
+    
+    def send_data(self, command, body):
+        # send data message to the server
+        pass
 
+    def receive_message(self, message):
+        # receive message from the server and process it
+        #Still need to disect the message to get to the request
+        pass
 
 
     
