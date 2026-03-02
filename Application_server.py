@@ -2,7 +2,7 @@
 from socket import *
 from User_Management import User_management as usm
 from User_Management import Database_manager as database
-
+import json
 
 class Server:
     def __init__(self):
@@ -34,7 +34,7 @@ class Server:
         login = lambda x, y:self.user_man.login(x, y)
         register = lambda x, y: self.user_man.register(x, y)
         logout = lambda user:self.user_man.logout(user) 
-        join = lambda user:self.user_man.join(user, groupID)
+        join = lambda user, groupID:self.user_man.join(user, groupID)
         exit = lambda user:self.user_man.exit(user)
         connect_request = lambda user1, user2 :self.user_man.connect_client(user1, user2)
         group_message = lambda user1, text :self.user_man.group_chat(user1, text)
@@ -62,16 +62,67 @@ class Server:
             return ack_responce
         
         if command==requests.get(5): 
-            x, y = data
-            ack_responce = login(x, y)
+            user, groupID = data
+            ack_responce = join(user, groupID)
             return ack_responce        
 
+
+        if command==requests.get(6): 
+            user, groupID = data
+            ack_responce = exit(user, groupID)
+            return ack_responce 
+        
+        if command==requests.get(7): 
+            user1, user2 = data
+            ack_responce = connect_request(user1, user2)
+            return ack_responce
+        
+        if command==requests.get(8): 
+            user, groupID, msg = data
+            ack_responce = group_message(user, groupID, msg)
+            return ack_responce 
+        
+
+
+    def parse_json(self, raw_json):
+        try:
+            # 1Convert JSON string → Python dict
+            message = json.loads(raw_json)
+
+            header = message.get("header", {})
+            body = message.get("body", {})
+
+            # Extract required header fields
+            sender_id = header.get("senderId")
+            msg_type = header.get("msgType")
+            command = header.get("command")
+            timestamp = header.get("timestamp")
+            body_length = header.get("bodyLength", 0)
+
+            # Convert body dictionary → tuple of values
+            # If bodyLength = 0, return empty tuple
+            if body_length == 0 or not body:
+                body_tuple = ()
+            else:
+                body_tuple = tuple(body.values())
+
+            return (sender_id, msg_type, command, timestamp, body_length, body_tuple)
+
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON format")
+
+        except Exception as e:
+            raise ValueError(f"Malformed MMMP message: {e}")
 
     def terminate(self):
         self.connection_socket.close()
 
 
 
+
+'''
+
+'''
 """
 
 1. command message: 
