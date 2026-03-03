@@ -9,6 +9,7 @@ class client:
         #self.server_port = server_port
         self.username = username
         self.ip_addr = ip_addr
+        self.client_socket = None
         pass
 
     def tcp_connect(self, server_ip, server_port):
@@ -17,8 +18,15 @@ class client:
         self.server_port = server_port
         client_socket = socket(AF_INET, SOCK_STREAM) 
         client_socket.connect((server_ip,server_port)) # establish the TCP Connection 
+        self.client_socket = client_socket
         print("connected to server")
        
+    def udp_connect(self, server_ip, server_port):
+        # establish UDP connection with the server
+        self.server_ip = server_ip
+        self.server_port = server_port
+        client_socket = socket(AF_INET, SOCK_DGRAM) 
+        print("connected to server")
 
     def send_command(self, command, body):
         # send command message to the server
@@ -84,6 +92,28 @@ class client:
             # send a PONG message back to the server automatically
             pong_message = self.send_command("PONG", "")
             return pong_message
+    
+    def send_message_tcp(self, message):
+        # send message to the server
+        self.client_socket.send(str(message).encode())
+
+    def get_message_tcp(self):
+        # receive message from the server
+        message = self.client_socket.recv(2048).decode()
+        #return message
+        self.receive_message(message)
+
+    def send_message_udp(self, message):
+        # send message to the server
+        self.client_socket.sendto(str(message).encode(), (self.server_ip, self.server_port))
+    
+    def get_message_udp(self):
+        # receive message from the server
+        message, serverAddress = self.client_socket.recvfrom(2048)
+        #return message.decode()
+        self.receive_message(message.decode())
+    
+
     '''
     function to send via the TCP_connection and also fuction for the UDP connection
     and a main function to run mend everything
@@ -91,7 +121,6 @@ class client:
     '''
 
 """
-
 1. command message: 
 {
   "header": {
@@ -108,9 +137,7 @@ class client:
     "members":["client_232", "client_222"]
   }
 }
-
 2. control message example
-
 {
   "header": {
     "msgType": "CONTROL",
@@ -123,10 +150,7 @@ class client:
     "bodyLength": 0
   }
 }
-
-
 3. Data message
-
 {
   "header": {
     "msgType": "DATA",
@@ -142,6 +166,4 @@ class client:
     "message":"Hello everyone."
   }
 }
-
-
 """
