@@ -111,7 +111,6 @@ class Server:
 
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON format")
-
         except Exception as e:
             raise ValueError(f"Malformed MMMP message: {e}")
         
@@ -151,6 +150,42 @@ class Server:
             message["body"] = body
 
         # Convert dict JSON string bytes (ready for TCP send)
+        return json.dumps(message).encode()
+
+
+    def build_control_message(self, command, seq_no, status_code, body=None):
+        """
+        command: "ACK" or "ERROR"
+        seq_no: sequence number of the original request
+        status_code: protocol status code (e.g., 2 = success, 5 = error)
+        body: optional dict (only used for ERROR typically)
+        """
+
+        if body is None:
+            body = {}
+
+        # Compute body length
+        body_json = json.dumps(body)
+        body_length = len(body_json.encode()) if body else 0
+
+        header = {
+            "msgType": "CONTROL",
+            "command": command,
+            "status_code": status_code,
+            "version": "MMMP/1.0",
+            "seqNo": seq_no,
+            "senderId": "server",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "bodyLength": body_length
+        }
+
+        message = {
+            "header": header
+        }
+
+        if body_length > 0:
+            message["body"] = body
+
         return json.dumps(message).encode()
 
     def terminate(self):
