@@ -17,6 +17,7 @@ class client:
         self.server_port = server_port
         client_socket = socket(AF_INET, SOCK_STREAM) 
         client_socket.connect((server_ip,server_port)) # establish the TCP Connection 
+        print("connected to server")
        
 
     def send_command(self, command, body):
@@ -62,20 +63,32 @@ class client:
         body = message_dict["body"]
         
         if header["msgType"] == 'ACK':
-            # processes the acknowledgement 
+            # process control message
             pass
         
         elif header["msgType"] == "ERROR":
             print("Received ERROR message:", body)
-            pass
+            # handle error message, you will be given a chance to re-do or terminate
+
         
-        elif header["msgType"] == "CONNECT GRANT":
+        elif header["msgType"] == "CONNECT_GRANT":
             # provides the target client's IP address and port number
-            pass
+            #assumption that the body will only contain the tuple (ip_adres, port_number)
+            cLient_ip, client_port = body['message']
+            self.tcp_connect(cLient_ip, client_port)
+            print("connected to target client")
+            
         
         elif header["msgType"] == "PING":
-            # respond with a PONG message to allow availability check
-            pass
+            # respond with a PONG message to maintain the connection
+            # send a PONG message back to the server automatically
+            pong_message = self.send_command("PONG", "")
+            return pong_message
+    '''
+    function to send via the TCP_connection and also fuction for the UDP connection
+    and a main function to run mend everything
+    or the send via TCP/UDP can be done in the main function 
+    '''
 
 """
 
