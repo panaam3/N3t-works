@@ -4,18 +4,11 @@ from User_Management import User_management as usm
 from User_Management import Database_manager as database
 import json
 from datetime import datetime
+import threading
 
 class Server:
     def __init__(self):
         self.user_man = usm()
-        server_port = 12000
-        
-        self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
-        self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
-        self.server_socket.listen(50) # waits for a client connection
-        self.connection_socket, self.addr = self.server_socket.accept() #accepts clients establishing connections
-        
-
     # Function that processes requests and returns responses to the client application
     """
       LOGIN > Initiates a client session.
@@ -66,7 +59,6 @@ class Server:
             user, groupID = data
             ack_responce = join(user, groupID)
             return ack_responce        
-
 
         if command==requests.get(6): 
             user, groupID = data
@@ -188,15 +180,36 @@ class Server:
 
         return json.dumps(message).encode()
 
+
+    
+
+    def handle_client(self, conn, addr):
+            print("Connected:", addr)
+
+            while True:
+                data = conn.recv(1024)
+
+                if not data:
+                    break  # client disconnected
+
+                message = data.decode()
+
+                if message == "q":
+                    break  # client chose to quit
+                conn.send(f"Echo: {message}".encode())
+
+            print("Connection closed:", addr)
+            conn.close()
+
+    def connection(self):
+        
+
     def terminate(self):
         self.connection_socket.close()
 
 
 
 
-'''
-
-'''
 """
 
 1. command message: 

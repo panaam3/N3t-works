@@ -25,13 +25,15 @@ class User_management:
         return self.acks(0)
 
     def create(self, user, group_name, chat_users = []):
+        chat_users = [user] + chat_users
         self.db.add_group(group_name, chat_users)
         return self.acks(0)
 
-    def join(self, user, groupID):
-        pass
+    def join(self, group_name, user):
+        self.db.add_to_group(group_name, user)
 
     def exit(self, user, groupID):
+        
         pass
 
     def connect_client(self, user1, user2):
@@ -52,6 +54,7 @@ class User:
 
     def get_user(self):
         return (self.name, self.ip)
+    
     
 
 class Database_manager:
@@ -117,4 +120,13 @@ class Database_manager:
         self.group_data.loc[:values_length - 1, column_name] = names
 
         # Save back
+        self.group_data.to_csv(self.groups_path, index=False)
+
+    def remove_to_group(self, group_name, user):
+        self.refresh()
+        self.group_data.loc[self.group_data[group_name] == user, group_name] = np.nan
+
+        # Remove rows that are entirely NaN
+        self.group_data = self.group_data.dropna(how="all")
+
         self.group_data.to_csv(self.groups_path, index=False)
