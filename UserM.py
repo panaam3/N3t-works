@@ -53,7 +53,7 @@ class User_management:
 
         for user in self.online_users:
             name, ip = user.get_user()
-            user2, = user2
+            user2 = user2[0]
             if name==user2: return user.get_user(), ip, self.acks(0)
 
         return None, None, self.acks(1) # user currently not online, must send an offline message
