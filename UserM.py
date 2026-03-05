@@ -42,11 +42,11 @@ class User_management:
     def exit(self, group_name, user):
         self.db.remove_to_group(group_name, user)
 
-    def connect_client(self, user1, user2):
+    def connect_client(self, user2):
         
         for user in self.online_users():
             name, ip = user.get_user()
-            if name==user2: return user1.get_user(), ip, self.acks(0)
+            if name==user2: return user2.get_user(), ip, self.acks(0)
 
         return None, None, self.acks(1) # user currently not online, must send an offline message
 
@@ -100,7 +100,6 @@ class Database_manager:
         return False
     
     def add_user(self, name, password):
-        print("Problem starts here....")
 
         self.refresh()
         df = pd.DataFrame({"user_name":[name], "login_password":[password]})

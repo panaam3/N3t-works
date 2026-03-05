@@ -47,7 +47,7 @@ class Server:
         
         if command==requests.get(2): 
             user,  = data
-            ack_responce = logout(user)
+            ack_responce = logout(user, ip_adrr)
             return ack_responce
         
         if command==requests.get(3): 
@@ -71,8 +71,8 @@ class Server:
             return ack_responce 
         
         if command==requests.get(7): 
-            user1, user2 = data
-            user_ , ip ,ack_responce = connect_request(user1, user2)
+            user2 = data
+            user_ , ip ,ack_responce = connect_request(user2)
             addr = Server.get_user(ip)
             data = self.build_control_message("ACK", 100,0, {"messsage": addr})
             self.send_to_client(Server.users_connectionsockets.get(ip), data)
@@ -204,11 +204,11 @@ class Server:
 
         sender_id, msg_type, command, timestamp, body_length, body_tuple = self.parse_json(raw_data)
 
-        if msg_type =="COMMAND" and command!="CONNECTION_REQUEST":
+        if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
             print(body_tuple)
             ack= self.response(sender_id, command, body_tuple) # (name, password)
 
-        if command=="CONNECTION_REQUEST":
+        if command=="CONNECT_REQUEST":
             ack = self.response(sender_id, command, body_tuple)
             return       
 
