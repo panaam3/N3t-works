@@ -1,15 +1,21 @@
 # client 
 from socket import *
 import datetime
+import json
+import threading
 
 
 class client_application:
-    def __init__(self, username, ip_addr='localhost'):
+    def __init__(self, username, ip_addr='localhost', peer_port=12345):
         self.server_ip = None
         self.server_port = None
         self.username = username
         self.ip_addr = ip_addr
+        self.peer_port = peer_port
         self.client_socket = None
+        self.udp_socket = None
+        self.peer_socket = None
+        self.peer_listener_socket = None
 
     def tcp_connect(self, server_ip, server_port):
         # establish TCP connection with the server
@@ -19,24 +25,67 @@ class client_application:
         client_socket.connect((server_ip,server_port)) # establish the TCP Connection 
         self.client_socket = client_socket
         print("connected to server")
-       
+        # START BACKGROUND LISTENER
+        threading.Thread(target=self.tcp_receive_thread,daemon=True).start()
+
+    def tcp_connect_peer(self, peer_ip, peer_port):
+        # establish TCP connection with the target client for 1-on-1 chat
+        peer_socket = socket(AF_INET, SOCK_STREAM) 
+        peer_socket.connect((peer_ip, peer_port)) # establish the TCP Connection 
+        self.peer_socket = peer_socket
+        print("connected to target client")
+
+        # Start receiver thread
+        threading.Thread(target=self.peer_receive_thread,daemon=True).start()
+    
+    def start_peer_listener(self):
+        listener = socket(AF_INET, SOCK_STREAM)
+        listener.bind((self.ip_addr, self.peer_port))
+        listener.listen(1)
+        #print("Waiting for peer connection...")
+        while True:
+            self.peer_socket, addr = listener.accept()
+            print("Peer connected") 
+
+            # Start thread to handle incoming messages
+            threading.Thread(
+                target=self.peer_receive_thread,
+                daemon=True
+            ).start()
+    
+    def peer_receive_thread(self):
+        buffer = ''
+        while True:
+            try:
+                msg = self.peer_socket.recv(2048).decode()
+                if not msg:
+                    break
+                buffer += msg
+                while '\n' in buffer:
+                    message, buffer = buffer.split('\n', 1)
+                    self.receive_message(message)
+            except:
+                print("Peer disconnected.")
+                self.peer_socket = None
+                break
+    
+
+
     def udp_connect(self, server_ip, server_port):
         # establish UDP connection with the server
         self.server_ip = server_ip
         self.server_port = server_port
-        client_socket = socket(AF_INET, SOCK_DGRAM) 
-        print("connected to server")
+        self.udp_socket = socket(AF_INET, SOCK_DGRAM) 
+        print("connected to server via udp")
 
     def send_command(self, command, body):
         # send command message to the server
         header  = {
             "msgType": "COMMAND",
             "command": command,
-            "version": "MMMP/1.0",
-            "seqNo": 2001,
             "senderId": self.username,
             "timestamp": datetime.datetime.now().isoformat(),
-            "bodyLength": len(body)
+            "bodyLength": len((json.dumps(body)).encode())
              }
         
         message = {
@@ -50,11 +99,9 @@ class client_application:
         header  ={
             "msgType": "DATA",
             "command": command,
-            "version": "MMMP/1.0",
-            "seqNo": 2002,
             "senderId": self.username,
             "timestamp": datetime.datetime.now().isoformat(),
-            "bodyLength": len(body)
+            "bodyLength": len((json.dumps(body)).encode())
             }
         message = {
             "header": header,
@@ -65,54 +112,58 @@ class client_application:
     def receive_message(self, message):
         # receive message from the server and process it
         #Still need to disect the message to get the request
-        message_dict = message
+        message_dict = json.loads(message)
         header = message_dict["header"]
         body = message_dict["body"]
         
-        if header["msgType"] == 'ACK':
+        if header["command"] == 'ACK':
             # process control message
             print('Continue with the next step')
         
-        elif header["msgType"] == "ERROR":
+        elif header["command"] == "ERROR":
             print("Received ERROR message: ", body)
             # handle error message, you will be given a chance to re-do or terminate
 
         
-        elif header["msgType"] == "CONNECT_GRANT":
+        elif header["command"] == "CONNECT_GRANT":
             # provides the target client's IP address and port number
             #assumption that the body will only contain the tuple (ip_adres, port_number)
-            cLient_ip, client_port = body['message']
-            self.tcp_connect(cLient_ip, client_port)
+            client_ip, client_port = body['message']
+            self.tcp_connect_peer(client_ip, client_port)
             print("connected to target client")
             
         
-        elif header["msgType"] == "PING":
+        elif header["command"] == "PING":
             # respond with a PONG message to maintain the connection
             # send a PONG message back to the server automatically
             pong_message = self.send_command("PONG", "")
             #return pong_message
             self.send_message_udp(pong_message)
         
-        elif header["msgType"] == "SEND_TEXT":
+        elif header["command"] == "SEND_TEXT":
             display_message = body['message']
             print("Them: ", display_message)
 
-        elif header["msgType"] == "GTEXT_MESSAGE":
+        elif header["command"] == "GTEXT_MESSAGE":
             display_message = body['message']
             print(f"{body['group_name']}-{header['senderId']}: ", display_message)
 
-        elif header["msgType"] == "VIEW_ONLINE":
+        elif header["command"] == "VIEW_ONLINE":
             online_users = body['online_users']
             print("Online users: ", online_users)
 
-        elif header["msgType"] == "EXIT_CHAT":
+        elif header["command"] == "EXIT_CHAT":
             print("The chat has ended by the other party.")
-            self.close_connection()  # Still need to revisit this maybe it will also end the connection with the server too
-
+            if self.peer_socket:
+                self.peer_socket.close()
+                self.peer_socket = None
 
     def send_message_tcp(self, message):
         # send message to the server
-        self.client_socket.send(str(message).encode())
+        self.client_socket.send((json.dumps(message)+ "\n").encode())
+
+    def send_message_peer(self, message):
+        self.peer_socket.send((json.dumps(message)+ "\n").encode())
 
     def get_message_tcp(self):
         # receive message from the server
@@ -120,13 +171,30 @@ class client_application:
         #return message
         self.receive_message(message)
 
+    def tcp_receive_thread(self):
+        buffer = ''
+        while True:
+            try:
+                msg = self.client_socket.recv(2048).decode()
+                if not msg:
+                    break
+
+                buffer += msg
+                while '\n' in buffer:
+                    message, buffer = buffer.split('\n', 1)
+                    self.receive_message(message)
+
+            except:
+                print("Server disconnected.")
+                break
+
     def send_message_udp(self, message):
         # send message to the server
-        self.client_socket.sendto(str(message).encode(), (self.server_ip, self.server_port))
+        self.udp_socket.sendto((json.dumps(message)).encode(), (self.server_ip, self.server_port))
     
     def get_message_udp(self):
         # receive message from the server
-        message, serverAddress = self.client_socket.recvfrom(2048)
+        message, serverAddress = self.udp_socket.recvfrom(2048)
         #return message.decode()
         self.receive_message(message.decode())
     
@@ -144,11 +212,16 @@ def main():
     server_port = int(input("Enter server port number: ")) 
     
     client.tcp_connect(server_ip, server_port)
+    client.udp_connect(server_ip, server_port)
+
+    # Start listening in background for peer connections
+    threading.Thread(target=client.start_peer_listener,daemon=True).start()
 
     def main_menu1():
         print("Main Menu:\n")
         print("1. REGISTER\n2. LOGIN")
     def register():
+        print("Welcome")
         password = input("Enter your password: ")
         register_message = client.send_command("REGISTER", {"username": client.username, "password": password})
         client.send_message_tcp(register_message)
@@ -160,11 +233,7 @@ def main():
         password = input("Enter your password: ")
         login_message = client.send_command("LOGIN", {"username": client.username, "password": password})
         client.send_message_tcp(login_message)
-        #main_menu2()
-        # wait for ACK or ERROR message from the server and process it in receive_message function
-        # I'm waiting for the server to check if the login is successful and then send an ACK message, if the login is unsuccessful, it will send an ERROR message and I will handle it in the receive_message function
-        #If the login is successful, I will proceed to the main menu 2, if the login is unsuccessful, I will give the user a chance to re-do or terminate
-    
+       
     def main_menu2():
         print("Main Menu:\n")
         print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT")
@@ -175,15 +244,24 @@ def main():
         user = input("Enter the username of the person you want to chat with: ")
         connect_request_message = client.send_command("CONNECT_REQUEST", {"target_user": user})
         client.send_message_tcp(connect_request_message)
-        client.receive_message(client.get_message_tcp())
         while True:
+            '''
             message = input("You: ")
             data_message = client.send_data("SEND_TEXT", {"message": message})
-            client.send_message_tcp(data_message)
+            client.send_message_peer(data_message)
             # wait for the other party to send a message and display it, also need to handle if the other party ends the chat by sending an EXIT_CHAT message
-            client.get_message_tcp()
+            client.get_message_peer()
             if message == 'EXIT_CHAT':
                 break
+            '''
+            message = input("You: ")
+            data_message = client.send_data("SEND_TEXT", {"message": message})
+            client.send_message_peer(data_message)
+            if message == "EXIT_CHAT":
+                client.peer_socket.close()
+                client.peer_socket = None
+                break
+
         main_menu2()
     
     def create_group():
@@ -198,13 +276,11 @@ def main():
         client.send_message_tcp(create_group_message)
         
         # wait for ACK or ERROR message from the server and process it
-        client.receive_message(client.get_message_tcp())
         message = input("Enter the message to the group ('done' to finish): ")
         gmessage = client.send_data("GTEXT_MESSAGE", {"group_name": group_name, "message": message})
         client.send_message_tcp(gmessage)
 
         while True:
-            client.get_message_tcp()
             message = input("You: ")
             gmessage = client.send_data("GTEXT_MESSAGE", {"group_name": group_name, "message": message})
             client.send_message_tcp(gmessage)
@@ -216,15 +292,12 @@ def main():
         # send a command message to the server to request the list of online users
         request_message = client.send_command("VIEW_ONLINE", "")
         client.send_message_tcp(request_message)
-        # wait for ACK or ERROR message from the server and process it in receive_message function, if ACK, the body will contain the list of online users, if ERROR, handle it in receive_message function
-        client.receive_message(client.get_message_tcp())
-
+        # wait for ACK or ERROR message from the server and process it in receive_message function
 
     def logout():
         logout_message = client.send_command("LOGOUT", "")
         client.send_message_tcp(logout_message)
         # wait for ACK or ERROR message from the server and process it in receive_message function
-        client.receive_message(client.get_message_tcp())
         client.close_connection()
         main_menu1()
 
