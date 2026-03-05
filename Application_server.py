@@ -2,7 +2,7 @@
 from socket import *
 from UserM import User_management as usm
 import json
-import datetime
+from datetime import datetime
 import threading
 
 class Server:
