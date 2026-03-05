@@ -35,7 +35,7 @@ class Server:
         logout = lambda user:self.user_man.logout(user) 
         join = lambda user, groupID:self.user_man.join(user, groupID)
         exit = lambda user:self.user_man.exit(user)
-        connect_request = lambda user1, user2 :self.user_man.connect_client(user1, user2)
+        connect_request = lambda user2 :self.user_man.connect_client(user2)
         group_message = lambda user1, text :self.user_man.group_chat(user1, text)
         create = lambda user, name, chat:self.user_man.create(user, name, chat)
 
