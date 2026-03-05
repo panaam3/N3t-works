@@ -25,12 +25,12 @@ class Server:
     
     """
 
-    def response(self, command, data = ()):
+    def response(self, ip_adrr, command, data = ()):
 
         requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE", 5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST", 8:"GTEXT_MESSAGE"}
 
         # user functions
-        login = lambda x, y:self.user_man.login(x, y)
+        login = lambda x, y, z:self.user_man.login(x, y, z)
         register = lambda x, y: self.user_man.register(x, y)
         logout = lambda user:self.user_man.logout(user) 
         join = lambda user, groupID:self.user_man.join(user, groupID)
@@ -42,7 +42,7 @@ class Server:
 
         if command==requests.get(1): 
             x, y = data
-            ack_responce = login(x, y)
+            ack_responce = login(x, y, ip_adrr)
             return ack_responce
         
         if command==requests.get(2): 
@@ -206,16 +206,16 @@ class Server:
 
         if msg_type =="COMMAND" and command!="CONNECTION_REQUEST":
             print(body_tuple)
-            ack= self.response(command, body_tuple) # (name, password)
+            ack= self.response(sender_id, command, body_tuple) # (name, password)
 
         if command=="CONNECTION_REQUEST":
-            ack = self.response(command, body_tuple)
+            ack = self.response(sender_id, command, body_tuple)
             return       
 
         # can only be a group message on the server side
         if msg_type =="DATA":
             # add a handler here for possible errors in version2 
-            ack  = self.response(command, body_tuple)
+            ack  = self.response(sender_id, command, body_tuple)
 
         if self.user_man.acks(0) == ack: return self.build_control_message(ack, 100, 0, {"":""})
         return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})

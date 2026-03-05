@@ -1,7 +1,5 @@
 # User Management
-import datetime
 import pandas as pd
-import random
 import numpy as np
 
 
@@ -13,14 +11,18 @@ class User_management:
     def update_online_users(self, user):
         self.online_users.append(user)
 
-    def login(self, name, password):
+    def login(self, name, password, ip_addr):
         print("logging in")
-        user = User(name, )
+        user = User(name, ip_addr)
+        self.online_users.append(user)
         if self.db.check_user(name) and self.db.verify_user(name, password)==True: return self.acks(0) # change this to some ack message
 
 
-    def logout(self, user):
-        self.online_users.remove(user)
+    def logout(self, user, ip_addr):
+        for usr in self.online_users:
+            name, ip = usr
+            if user==name and ip==ip_addr:
+                self.online_users.remove(usr)
         print("logging out")
         return self.acks(0)
     
