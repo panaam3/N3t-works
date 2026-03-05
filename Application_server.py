@@ -3,12 +3,18 @@ from socket import *
 from User_Management import User_management as usm
 from User_Management import Database_manager as database
 import json
-from datetime import datetime
+import datetime
 import threading
 
 class Server:
+
     def __init__(self):
         self.user_man = usm()
+        self.start_server()
+
+    users_connectionsockets = {} # identify or map with ip address
+    users_ports = {} # port numbers identified or mapped with ip, addr = (ip, port)
+        
     # Function that processes requests and returns responses to the client application
     """
       LOGIN > Initiates a client session.
@@ -67,7 +73,10 @@ class Server:
         
         if command==requests.get(7): 
             user1, user2 = data
-            ack_responce = connect_request(user1, user2)
+            user_ , addr ,ack_responce = connect_request(user1, user2)
+            _, ip = user_
+            data = self.build_control_message("ACK", 100,0, {"messsage": addr})
+            self.send_to_client(Server.users_connectionsockets.get(ip), data)
             return ack_responce
         
         if command==requests.get(8): 
@@ -179,34 +188,62 @@ class Server:
             message["body"] = body
 
         return json.dumps(message).encode()
-
-
     
 
-    def handle_client(self, conn, addr):
-            print("Connected:", addr)
+    def send_to_client(self, connection_socket, data):
+        connection_socket.send(data.encode()) # send modified message to the server socket (then back to the current client)
 
-            while True:
-                data = conn.recv(1024)
+    def receive_client_data(self, connection_socket):
+        while True:
+            data = connection_socket.recv(1024).decode()
+            self.process_data(data)
 
-                if not data:
-                    break  # client disconnected
-
-                message = data.decode()
-
-                if message == "q":
-                    break  # client chose to quit
-                conn.send(f"Echo: {message}".encode())
-
-            print("Connection closed:", addr)
-            conn.close()
-
-    def connection(self):
         
+    def process_data(self, raw_data): # raw_data is a JSON
 
-    def terminate(self):
-        self.connection_socket.close()
+        sender_id, msg_type, command, timestamp, body_length, body_tuple = self.parse_json(raw_data)
 
+        if msg_type =="COMMAND" and command!="CONNECTION_REQUEST":
+            ack= self.response(command, body_tuple)
+
+        if command=="CONNECTION_REQUEST":
+            ack = self.response(command, body_tuple)
+            return
+        # can only be a group message on the server side
+        if msg_type =="DATA":
+            # add a handler here for possible errors in version2 
+            ack  = self.response(command, body_tuple)
+
+        if self.user_man.acks(0) == ack: return self.build_control_message(ack, 100, 0, {"":""})
+        return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})
+
+    def listen_for_data(self, connection_socket):
+        client_threads = threading.Thread(target=self.receive_client_data, args=connection_socket)
+        client_threads.start()
+
+    def get_user(ip_addr):
+        return (ip_addr, Server.users_ports.get(ip_addr))
+    
+    def establish_connection(self):
+        while True:
+            connection_socket, addr = self.server_socket.accept() #accepts clients establishing connections
+            ip_address, port_number = addr
+            Server.users_ports[ip_address] = port_number
+            Server.users_connectionsockets[ip_address] = connection_socket
+            threading.Thread(target=self.handle_client, args=(connection_socket, addr), daemon=True).start()
+
+
+    def terminate(self): # server closes
+        self.server_socket.close()
+
+
+    def start_server(self):
+        server_port = 12000
+        self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
+        self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
+        self.server_socket.listen(50) # waits for a client connection
+
+        self.establish_connection()
 
 
 
