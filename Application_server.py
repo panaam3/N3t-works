@@ -75,7 +75,10 @@ class Server:
             user_ , ip ,ack_responce = connect_request(user2)
             addr = Server.get_user(ip)
             data = self.build_control_message("ACK", 100,0, {"messsage": addr})
-            self.send_to_client(Server.users_connectionsockets.get(ip), data)
+            print(ip)
+            connection_socket = Server.users_connectionsockets.get(ip)
+            print(connection_socket)
+            self.send_to_client(connection_socket, data)
             return ack_responce
         
         if command==requests.get(8): 
@@ -242,7 +245,7 @@ class Server:
 
 
     def start_server(self):
-        server_port = 12000
+        server_port = 15000
         self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
         self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
         self.server_socket.listen(50) # waits for a client connection

@@ -13,8 +13,11 @@ class User_management:
 
     def login(self, name, password, ip_addr):
         print("logging in")
+        
         user = User(name, ip_addr)
-        self.online_users.append(user)
+        self.update_online_users(user)
+
+        print(self.online_users)
         if self.db.check_user(name) and self.db.verify_user(name, password)==True: return self.acks(0) # change this to some ack message
 
 
@@ -43,7 +46,7 @@ class User_management:
         self.db.remove_to_group(group_name, user)
 
     def connect_client(self, user2):
-        
+        print(self.online_users)
         for user in self.online_users:
             name, ip = user.get_user()
             if name==user2: return user2.get_user(), ip, self.acks(0)
