@@ -196,7 +196,9 @@ class Server:
     def receive_client_data(self, connection_socket):
         while True:
             data = connection_socket.recv(1024).decode()
-            self.process_data(data)
+            ctrl_msg = self.process_data(data)
+            if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
+            else: pass
 
         
     def process_data(self, raw_data): # raw_data is a JSON
@@ -208,8 +210,7 @@ class Server:
 
         if command=="CONNECTION_REQUEST":
             ack = self.response(command, body_tuple)
-            return
-        
+            return       
 
         # can only be a group message on the server side
         if msg_type =="DATA":
@@ -232,7 +233,7 @@ class Server:
             ip_address, port_number = addr
             Server.users_ports[ip_address] = port_number
             Server.users_connectionsockets[ip_address] = connection_socket
-            threading.Thread(target=self.handle_client, args=(connection_socket, addr), daemon=True).start()
+            threading.Thread(target=self.receive_client_data, args=(connection_socket, addr), daemon=True).start()
 
 
     def terminate(self): # server closes
