@@ -6,7 +6,7 @@ import threading
 
 
 class client_application:
-    def __init__(self, username, ip_addr='localhost', peer_port=12345):
+    def __init__(self, username, ip_addr='localhost', peer_port=8000):
         self.server_ip = None
         self.server_port = None
         self.username = username
@@ -220,9 +220,6 @@ def main():
     client.tcp_connect(server_ip, server_port)
     client.udp_connect(server_ip, server_port)
 
-    # Start listening in background for peer connections
-    threading.Thread(target=client.start_peer_listener,daemon=True).start()
-
     def main_menu1():
         print("Main Menu:\n")
         print("1. REGISTER\n2. LOGIN\n")
@@ -249,13 +246,15 @@ def main():
         print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT\n")
     
     def one_on_one_chat():
+        # Start listening in background for peer connections
+        threading.Thread(target=client.start_peer_listener,daemon=True).start()
         # get the list of users from the server and display them for client to choose which one to chat with
         # when the client chooses, the server obtains the targets ip_adrees and port number so that we can connect
         user = input("Enter the username of the person you want to chat with: ")
         connect_request_message = client.send_command("CONNECT_REQUEST", {"target_user": user})
         client.send_message_tcp(connect_request_message)
         #client.get_message_tcp()
-        while True:
+        while client.peer_socket is not None:
             '''
             message = input("You: ")
             data_message = client.send_data("SEND_TEXT", {"message": message})
@@ -341,6 +340,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 #196.47.246.187
