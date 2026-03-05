@@ -1,8 +1,9 @@
 # User Management
-
+import datetime
 import pandas as pd
 import random
 import numpy as np
+from Application_server import Server
 
 class User_management:
     def __init__(self):
@@ -32,15 +33,25 @@ class User_management:
     def join(self, group_name, user):
         self.db.add_to_group(group_name, user)
 
-    def exit(self, user, groupID):
-        
-        pass
+    def exit(self, group_name, user):
+        self.db.remove_to_group(group_name, user)
 
     def connect_client(self, user1, user2):
-        pass
+        
+        for user in self.online_users():
+            name, ip = user.get_user()
+            if name==user2: return user1.get_user(), Server.get_user(ip), self.acks(0)
 
-    def group_chat(self, user, text):
-        pass
+        return None, None, self.acks(1) # user currently not online, must send an offline message
+
+    def group_chat(self, group_name, user, text):
+
+        # get group method
+        for addr, conn in self.clients.items():
+            try:
+                conn.send(text.encode())
+            except:
+                pass
 
     def acks(self, numeric):
         ack_error_codes = {0:"ACK", 1:"ERROR"}
@@ -56,7 +67,6 @@ class User:
         return (self.name, self.ip)
     
     
-
 class Database_manager:
     def __init__(self):
         self.file_path = 'database.csv'

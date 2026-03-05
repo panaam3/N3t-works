@@ -233,7 +233,7 @@ class Server:
             ip_address, port_number = addr
             Server.users_ports[ip_address] = port_number
             Server.users_connectionsockets[ip_address] = connection_socket
-            threading.Thread(target=self.receive_client_data, args=(connection_socket, addr), daemon=True).start()
+            threading.Thread(target=self.receive_client_data, args=(connection_socket,), daemon=True).start()
 
 
     def terminate(self): # server closes
