@@ -44,7 +44,7 @@ class User_management:
 
     def connect_client(self, user2):
         
-        for user in self.online_users():
+        for user in self.online_users:
             name, ip = user.get_user()
             if name==user2: return user2.get_user(), ip, self.acks(0)
 
