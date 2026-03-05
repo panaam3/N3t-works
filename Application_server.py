@@ -1,7 +1,6 @@
 # Application Server
 from socket import *
 from UserM import User_management as usm
-from UserM import Database_manager as database
 import json
 import datetime
 import threading
@@ -73,8 +72,8 @@ class Server:
         
         if command==requests.get(7): 
             user1, user2 = data
-            user_ , addr ,ack_responce = connect_request(user1, user2)
-            _, ip = user_
+            user_ , ip ,ack_responce = connect_request(user1, user2)
+            addr = Server.get_user(ip)
             data = self.build_control_message("ACK", 100,0, {"messsage": addr})
             self.send_to_client(Server.users_connectionsockets.get(ip), data)
             return ack_responce
@@ -196,7 +195,6 @@ class Server:
     def receive_client_data(self, connection_socket):
         while True:
             data = connection_socket.recv(1024).decode()
-            print("Problem starts here....")
             ctrl_msg = self.process_data(data)
             if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
             else: pass
@@ -233,6 +231,7 @@ class Server:
         while True:
             connection_socket, addr = self.server_socket.accept() #accepts clients establishing connections
             ip_address, port_number = addr
+            print("Connected to client")
             Server.users_ports[ip_address] = port_number
             Server.users_connectionsockets[ip_address] = connection_socket
             threading.Thread(target=self.receive_client_data, args=(connection_socket,), daemon=True).start()

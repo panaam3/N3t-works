@@ -3,7 +3,7 @@ import datetime
 import pandas as pd
 import random
 import numpy as np
-from Application_server import Server
+
 
 class User_management:
     def __init__(self):
@@ -14,18 +14,19 @@ class User_management:
         self.online_users.append(user)
 
     def login(self, name, password):
-        print("Problem starts here....")
-
+        print("logging in")
         user = User(name, )
         if self.db.check_user(name) and self.db.verify_user(name, password)==True: return self.acks(0) # change this to some ack message
 
 
     def logout(self, user):
         self.online_users.remove(user)
+        print("logging out")
         return self.acks(0)
     
     def register(self, user, password):
         self.db.add_user(user, password)
+        print("registering")
         return self.acks(0)
 
     def create(self, user, group_name, chat_users = []):
@@ -43,7 +44,7 @@ class User_management:
         
         for user in self.online_users():
             name, ip = user.get_user()
-            if name==user2: return user1.get_user(), Server.get_user(ip), self.acks(0)
+            if name==user2: return user1.get_user(), ip, self.acks(0)
 
         return None, None, self.acks(1) # user currently not online, must send an offline message
 
@@ -106,7 +107,7 @@ class Database_manager:
 
     def refresh(self):
         self.server_data = pd.read_csv(self.file_path)
-        self.group_data = pd.read_csv(self.group_data)
+        self.group_data = pd.read_csv(self.groups_path)
     
     def add_to_group(self, group_name, user):
         self.refresh()
