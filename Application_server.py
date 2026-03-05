@@ -191,7 +191,7 @@ class Server:
     
 
     def send_to_client(self, connection_socket, data):
-        connection_socket.send(data.encode()) # send modified message to the server socket (then back to the current client)
+        connection_socket.send(data) # send modified message to the server socket (then back to the current client)
 
     def receive_client_data(self, connection_socket):
         while True:
@@ -209,6 +209,8 @@ class Server:
         if command=="CONNECTION_REQUEST":
             ack = self.response(command, body_tuple)
             return
+        
+
         # can only be a group message on the server side
         if msg_type =="DATA":
             # add a handler here for possible errors in version2 
@@ -218,7 +220,7 @@ class Server:
         return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})
 
     def listen_for_data(self, connection_socket):
-        client_threads = threading.Thread(target=self.receive_client_data, args=connection_socket)
+        client_threads = threading.Thread(target=self.receive_client_data, args=(connection_socket,))
         client_threads.start()
 
     def get_user(ip_addr):
@@ -242,10 +244,13 @@ class Server:
         self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
         self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
         self.server_socket.listen(50) # waits for a client connection
-
+        print("Server listening on port", server_port)
         self.establish_connection()
 
 
+if __name__ == "__main__":
+    print("Starting server...")
+    server = Server()
 
 """
 
