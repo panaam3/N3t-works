@@ -236,6 +236,8 @@ class Server:
             ip_address, port_number = addr
             print("Connected to client")
             Server.users_ports[ip_address] = port_number
+            print(Server.users_connectionsockets)
+            print(Server.users_ports)
             Server.users_connectionsockets[ip_address] = connection_socket
             threading.Thread(target=self.receive_client_data, args=(connection_socket,), daemon=True).start()
 
@@ -245,7 +247,7 @@ class Server:
 
 
     def start_server(self):
-        server_port = 15000
+        server_port = 12000
         self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
         self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
         self.server_socket.listen(50) # waits for a client connection

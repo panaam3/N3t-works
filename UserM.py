@@ -23,7 +23,7 @@ class User_management:
 
     def logout(self, user, ip_addr):
         for usr in self.online_users:
-            name, ip = usr
+            name, ip = usr.get_user()
             if user==name and ip==ip_addr:
                 self.online_users.remove(usr)
         print("logging out")
@@ -46,7 +46,11 @@ class User_management:
         self.db.remove_to_group(group_name, user)
 
     def connect_client(self, user2):
-        print(self.online_users)
+        print(f"trying to connect with {user2}")
+        for usr in self.online_users:
+            nm, ip = usr.get_user()
+            print(f"name: {nm}, ip: {ip}")
+
         for user in self.online_users:
             name, ip = user.get_user()
             if name==user2: return user2.get_user(), ip, self.acks(0)
