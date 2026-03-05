@@ -1,7 +1,7 @@
 # Application Server
 from socket import *
-from User_Management import User_management as usm
-from User_Management import Database_manager as database
+from UserM import User_management as usm
+from UserM import Database_manager as database
 import json
 import datetime
 import threading
@@ -196,6 +196,7 @@ class Server:
     def receive_client_data(self, connection_socket):
         while True:
             data = connection_socket.recv(1024).decode()
+            print("Problem starts here....")
             ctrl_msg = self.process_data(data)
             if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
             else: pass
@@ -206,7 +207,8 @@ class Server:
         sender_id, msg_type, command, timestamp, body_length, body_tuple = self.parse_json(raw_data)
 
         if msg_type =="COMMAND" and command!="CONNECTION_REQUEST":
-            ack= self.response(command, body_tuple)
+            print(body_tuple)
+            ack= self.response(command, body_tuple) # (name, password)
 
         if command=="CONNECTION_REQUEST":
             ack = self.response(command, body_tuple)
