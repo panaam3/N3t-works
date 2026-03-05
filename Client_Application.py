@@ -42,7 +42,7 @@ class client_application:
         listener = socket(AF_INET, SOCK_STREAM)
         listener.bind((self.ip_addr, self.peer_port))
         listener.listen(1)
-        #print("Waiting for peer connection...")
+        print("Waiting for peer connection...")
         while True:
             self.peer_socket, addr = listener.accept()
             print("Peer connected") 
@@ -83,7 +83,7 @@ class client_application:
         header  = {
             "msgType": "COMMAND",
             "command": command,
-            "senderId": self.username,
+            "senderId": self.ip_addr,
             "timestamp": datetime.datetime.now().isoformat(),
             "bodyLength": len((json.dumps(body)).encode())
              }
@@ -136,6 +136,7 @@ class client_application:
         elif header["command"] == "PING":
             # respond with a PONG message to maintain the connection
             # send a PONG message back to the server automatically
+
             pong_message = self.send_command("PONG", "")
             #return pong_message
             self.send_message_udp(pong_message)
@@ -164,6 +165,10 @@ class client_application:
 
     def send_message_peer(self, message):
         self.peer_socket.send((json.dumps(message)+ "\n").encode())
+
+   # def get_message_peer(self):
+    #    message = self.peer_socket.recv(2048).decode()
+     #   self.receive_message(message)
 
     def get_message_tcp(self):
         # receive message from the server
@@ -206,7 +211,8 @@ class client_application:
     
 def main():
     username = input("Enter your username: ")
-    client = client_application(username)
+    ip_addr = input("Enter your IP address (or press Enter for localhost): ") or 'localhost'
+    client = client_application(username, ip_addr)
 
     server_ip = input("Enter server IP address: ")
     server_port = int(input("Enter server port number: ")) 
@@ -219,7 +225,7 @@ def main():
 
     def main_menu1():
         print("Main Menu:\n")
-        print("1. REGISTER\n2. LOGIN")
+        print("1. REGISTER\n2. LOGIN\n")
     def register():
         print("Welcome")
         password = input("Enter your password: ")
@@ -229,14 +235,18 @@ def main():
         login()
 
     def login():
-        print("Welcome back, ", client.username)
+        print("Welcome back,", client.username)
         password = input("Enter your password: ")
         login_message = client.send_command("LOGIN", {"username": client.username, "password": password})
         client.send_message_tcp(login_message)
-       
+        #main_menu2()
+        # wait for ACK or ERROR message from the server and process it in receive_message function
+        # I'm waiting for the server to check if the login is successful and then send an ACK message, if the login is unsuccessful, it will send an ERROR message and I will handle it in the receive_message function
+        #If the login is successful, I will proceed to the main menu 2, if the login is unsuccessful, I will give the user a chance to re-do or terminate
+    
     def main_menu2():
         print("Main Menu:\n")
-        print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT")
+        print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT\n")
     
     def one_on_one_chat():
         # get the list of users from the server and display them for client to choose which one to chat with
@@ -244,6 +254,7 @@ def main():
         user = input("Enter the username of the person you want to chat with: ")
         connect_request_message = client.send_command("CONNECT_REQUEST", {"target_user": user})
         client.send_message_tcp(connect_request_message)
+        #client.get_message_tcp()
         while True:
             '''
             message = input("You: ")
@@ -276,11 +287,13 @@ def main():
         client.send_message_tcp(create_group_message)
         
         # wait for ACK or ERROR message from the server and process it
+        #client.get_message_tcp()
         message = input("Enter the message to the group ('done' to finish): ")
         gmessage = client.send_data("GTEXT_MESSAGE", {"group_name": group_name, "message": message})
         client.send_message_tcp(gmessage)
 
         while True:
+            #client.get_message_tcp()
             message = input("You: ")
             gmessage = client.send_data("GTEXT_MESSAGE", {"group_name": group_name, "message": message})
             client.send_message_tcp(gmessage)
@@ -292,15 +305,18 @@ def main():
         # send a command message to the server to request the list of online users
         request_message = client.send_command("VIEW_ONLINE", "")
         client.send_message_tcp(request_message)
-        # wait for ACK or ERROR message from the server and process it in receive_message function
+        # wait for ACK or ERROR message from the server and process it in receive_message function, if ACK, the body will contain the list of online users, if ERROR, handle it in receive_message function
+        #client.get_message_tcp()
+
 
     def logout():
         logout_message = client.send_command("LOGOUT", "")
         client.send_message_tcp(logout_message)
         # wait for ACK or ERROR message from the server and process it in receive_message function
+        #client.get_message_tcp()
         client.close_connection()
         main_menu1()
-
+    #will need to do a while loop when we are still connected to the server
     main_menu1()
     choice = input("Enter your choice: ")
     if choice == '1':
@@ -317,6 +333,7 @@ def main():
             view_online_users()
         elif choice2 == '4':
             logout()
+            #break
         else:
             print("Invalid choice. Please try again.")
     else:
@@ -324,5 +341,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 #196.47.246.187
