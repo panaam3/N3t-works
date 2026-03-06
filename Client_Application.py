@@ -276,6 +276,7 @@ def main():
         print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT\n")
     
     def one_on_one_chat():
+        nonlocal client
         # Start listening in background for peer connections
         threading.Thread(target=client.start_peer_listener,daemon=True).start()
         # get the list of users from the server and display them for client to choose which one to chat with
