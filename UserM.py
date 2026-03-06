@@ -54,7 +54,7 @@ class User_management:
             print('trying:', usrr)
             if usrr==user: 
                 print('found', usrr)
-                return user.get_user(), self.acks(0)
+                return user, self.acks(0)
 
         return None, self.acks(1) # user currently not online, must send an offline message
 

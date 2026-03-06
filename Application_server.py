@@ -197,35 +197,70 @@ class Server:
     
 
     def send_to_client(self, connection_socket, data):
-        connection_socket.send(data.encode()) # send modified message to the server socket (then back to the current client)
+        connection_socket.send((data + '\n').encode())# send modified message to the server socket (then back to the current client)
 
     def receive_client_data(self, connection_socket, num=1):
-        # num = 0 (logging in state) or 1 (Passed login and ready to transmit data) 
-        if num==1:
+
+        
+        buffer = ''
+
+        if num == 1:
             while True:
                 try:
-                    data = connection_socket.recv(1024).decode()
-                    print("connected, everything good")
-                    ctrl_msg = self.process_data(data)
-                    if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
-                    else: pass
-        
+                    chunk = connection_socket.recv(1024).decode()
+
+                    if not chunk:
+                        print("client disconnected")
+                        break
+
+                    buffer += chunk
+
+                    while '\n' in buffer:
+                        raw_message, buffer = buffer.split('\n', 1)
+
+                        if not raw_message.strip():
+                            continue
+
+                        print("connected, everything good")
+                        ctrl_msg = self.process_data(raw_message)
+
+                        if ctrl_msg:
+                            self.send_to_client(connection_socket, ctrl_msg)
+
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     print("disconnected")
+                    break
+                except ValueError as e:
+                    print(f"Bad message received: {e}")
         else:
-            data = connection_socket.recv(1024).decode()
-            login_msg = self.process_data(data)
-            self.send_to_client(connection_socket, login_msg)
-            client_json= self.parse_json(data)
-            username = client_json[0]
-            return username
+            buffer = ''
+            while True:
+                chunk = connection_socket.recv(1024).decode()
+
+                if not chunk:
+                    return None
+
+                buffer += chunk
+
+                while '\n' in buffer:
+                    raw_message, buffer = buffer.split('\n', 1)
+
+                    if not raw_message.strip():
+                        continue
+
+                    login_msg = self.process_data(raw_message)
+                    self.send_to_client(connection_socket, login_msg)
+
+                    client_json = self.parse_json(raw_message)
+                    username = client_json[0]
+                    return username
             
 
         
     def process_data(self, raw_data): # raw_data is a JSON
         
-        if raw_data=="\n":
-            pass
+        if not raw_data or not raw_data.strip():
+            return None
         else :
             sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
