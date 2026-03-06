@@ -1,12 +1,14 @@
 # client 
 from socket import *
 import datetime
+import time
 import json
 import threading
+import queue
 
 
 class client_application:
-    def __init__(self, username, ip_addr, peer_port=8000):
+    def __init__(self, username, ip_addr="localhost", peer_port=8000):
         self.server_ip = None
         self.server_port = None
         self.username = username
@@ -16,6 +18,8 @@ class client_application:
         self.udp_socket = None
         self.peer_socket = None
         self.peer_listener_socket = None
+        self.message_queue = queue.Queue()
+        self.waiting_for_response = False
 
     def tcp_connect(self, server_ip, server_port):
         # establish TCP connection with the server
@@ -42,7 +46,7 @@ class client_application:
         listener = socket(AF_INET, SOCK_STREAM)
         listener.bind((self.ip_addr, self.peer_port))
         listener.listen(1)
-        print("Waiting for peer connection...")
+        print("\nWaiting for peer connection...")
         while True:
             self.peer_socket, addr = listener.accept()
             print("Peer connected") 
@@ -125,15 +129,6 @@ class client_application:
             print("Received ERROR message: ", body)
             # handle error message, you will be given a chance to re-do or terminate
 
-        
-        elif header["command"] == "CONNECT_GRANT":
-            # provides the target client's IP address and port number
-            #assumption that the body will only contain the tuple (ip_adres, port_number)
-            client_ip, client_port = body['message']
-            self.tcp_connect_peer(client_ip, client_port)
-            print("connected to target client")
-            
-        
         elif header["command"] == "PING":
             # respond with a PONG message to maintain the connection
             # send a PONG message back to the server automatically
@@ -167,9 +162,26 @@ class client_application:
     def send_message_peer(self, message):
         self.peer_socket.send((json.dumps(message)+ "\n").encode())
 
-   # def get_message_peer(self):
-    #    message = self.peer_socket.recv(2048).decode()
-     #   self.receive_message(message)
+    def get_connect_message_for_peer(self, timeout=10):
+        self.waiting_for_response = True
+        try:
+            message = self.message_queue.get(timeout=timeout)
+            message_dict = json.loads(message)
+            header = message_dict["header"]
+            body = message_dict["body"]
+
+            if header['command'] == "ACK":
+                client_ip, client_port = body['message']
+                self.tcp_connect_peer(client_ip, client_port)
+                print("connected to target client")
+                return True
+            else:
+                self.receive_message(message)
+                return False
+        except queue.Empty:
+            print("Timeout waiting for connection grant")
+            return False
+        # self.receive_message(message)
 
     def get_message_tcp(self):
         # receive message from the server
@@ -188,7 +200,12 @@ class client_application:
                 buffer += msg
                 while '\n' in buffer:
                     message, buffer = buffer.split('\n', 1)
-                    self.receive_message(message)
+
+                    if self.waiting_for_response:
+                        self.message_queue.put(message)
+                        self.waiting_for_response = False
+                    else:
+                        self.receive_message(message)
 
             except:
                 print("Server disconnected.")
@@ -211,30 +228,42 @@ class client_application:
         print("Connection is closed")
     
 def main():
-    username = input("Enter your username: ")
-    ip_addr = input("Enter your IP address: ")
-    client = client_application(username, ip_addr)
+    client = None
 
     server_ip = input("Enter server IP address: ")
-    server_port = int(input("Enter server port number: ")) 
+    server_port = 12000    #int(input("Enter server port number: ")) 
     
-    client.tcp_connect(server_ip, server_port)
-    client.udp_connect(server_ip, server_port)
+    #client.tcp_connect(server_ip, server_port)
+    #client.udp_connect(server_ip, server_port)
 
     def main_menu1():
         print("Main Menu:\n")
         print("1. REGISTER\n2. LOGIN\n")
     def register():
         print("Welcome")
+        nonlocal client
+        username = input("Enter your username: ")
         password = input("Enter your password: ")
+
+        client = client_application(username)
+        client.tcp_connect(server_ip, server_port)
+        client.udp_connect(server_ip, server_port)
+
         register_message = client.send_command("REGISTER", {"username": client.username, "password": password})
         client.send_message_tcp(register_message)
+        time.sleep(1)
         # wait for ACK or ERROR message from the server and process it in receive_message function
-        login()
+    
 
     def login():
-        print("Welcome back,", client.username)
+        print("Welcome back")
+        nonlocal client 
+        username = input("Enter your username: ")
         password = input("Enter your password: ")
+
+        client = client_application(username)
+        client.tcp_connect(server_ip, server_port)
+        client.udp_connect(server_ip, server_port)
         login_message = client.send_command("LOGIN", {"username": client.username, "password": password})
         client.send_message_tcp(login_message)
         #main_menu2()
@@ -254,6 +283,7 @@ def main():
         user = input("Enter the username of the person you want to chat with: ")
         connect_request_message = client.send_command("CONNECT_REQUEST", {"target_user": user})
         client.send_message_tcp(connect_request_message)
+        client.get_connect_message_for_peer()
         #client.get_message_tcp()
         while client.peer_socket is not None:
             '''
@@ -318,12 +348,12 @@ def main():
         main_menu1()
     #will need to do a while loop when we are still connected to the server
     main_menu1()
-    logged_in = True
-    while logged_in and client.client_socket:
+    while client.client_socket:
         
         choice = input("Enter your choice: ")
         if choice == '1':
             register()
+            main_menu1()
         elif choice == '2':
             login()
             main_menu2()
