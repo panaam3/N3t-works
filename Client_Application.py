@@ -375,23 +375,3 @@ if __name__ == "__main__":
 
 
 #196.47.246.187
-
-Enter your choice: 1
-Enter the username of the person you want to chat with: 
-Waiting for peer connection...
-Kungawo
-{'header': {'msgType': 'CONTROL', 'command': 'ACK', 'status_code': 0, 'version': 'MMMP/1.0', 'seqNo': 100, 'senderId': 'server', 'timestamp': '2026-03-06T21:00:27.080223Z', 'bodyLength': 38}, 'body': {'message': ['196.47.246.187', 58319]}}
-Continue with the next step
-Traceback (most recent call last):
-  File "c:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main\Client_Application.py", line 375, in <module>
-    main()
-  File "c:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main\Client_Application.py", line 362, in main
-    one_on_one_chat()
-  File "c:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main\Client_Application.py", line 287, in one_on_one_chat     
-    client.get_connect_message_for_peer()
-  File "c:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main\Client_Application.py", line 176, in get_connect_message_for_peer
-    self.tcp_connect_peer(client_ip, client_port)
-  File "c:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main\Client_Application.py", line 38, in tcp_connect_peer     
-    peer_socket.connect((peer_ip, peer_port)) # establish the TCP Connection
-ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
-PS C:\Users\Kungawo Mase\OneDrive - University of Cape Town\CSC3\CSC3002F\N3t-works-main\N3t-works-main> 
