@@ -357,21 +357,20 @@ def main():
     elif choice == '2':
         login()
     while logged_in:
-        while client.client_socket:
-            main_menu2()
-            choice2 = input("Enter your choice: ")
-            if choice2 == '1':
-                one_on_one_chat()
-            elif choice2 == '2':
-                create_group()
-            elif choice2 == '3':
-                view_online_users()
-            elif choice2 == '4':
-                logout()
-                break
-            else:
-                print("Invalid choice. Please try again.")
-        print("Disconnected from server.")
+        main_menu2()
+        choice2 = input("Enter your choice: ")
+        if choice2 == '1':
+            one_on_one_chat()
+        elif choice2 == '2':
+            create_group()
+        elif choice2 == '3':
+            view_online_users()
+        elif choice2 == '4':
+            logout()
+            break
+        else:
+            print("Invalid choice. Please try again.")
+    print("Disconnected from server.")
 
 if __name__ == "__main__":
     main()
