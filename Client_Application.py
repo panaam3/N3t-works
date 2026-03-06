@@ -84,7 +84,7 @@ class client_application:
         header  = {
             "msgType": "COMMAND",
             "command": command,
-            "senderId": self.ip_addr,
+            "senderId": self.username,
             "timestamp": datetime.datetime.now().isoformat(),
             "bodyLength": len((json.dumps(body)).encode())
              }
