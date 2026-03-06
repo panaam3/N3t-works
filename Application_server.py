@@ -30,7 +30,7 @@ class Server:
         requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE", 5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST", 8:"GTEXT_MESSAGE"}
 
         # user functions
-        login = lambda x, y, z:self.user_man.login(x, y, z)
+        login = lambda x, y:self.user_man.login(x, y)
         register = lambda x, y: self.user_man.register(x, y)
         logout = lambda user:self.user_man.logout(user) 
         join = lambda user, groupID:self.user_man.join(user, groupID)
