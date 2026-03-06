@@ -11,20 +11,20 @@ class User_management:
     def update_online_users(self, user):
         self.online_users.append(user)
 
-    def login(self, name, password, ip_addr):
+    def login(self, name, password):
         print("logging in")
         
-        user = User(name, ip_addr)
+        user = name
         self.update_online_users(user)
 
         print(self.online_users)
         if self.db.check_user(name) and self.db.verify_user(name, password)==True: return self.acks(0) # change this to some ack message
 
 
-    def logout(self, user, ip_addr):
+    def logout(self, user):
         for usr in self.online_users:
             name, ip = usr.get_user()
-            if user==name and ip==ip_addr:
+            if user==name :
                 self.online_users.remove(usr)
         print("logging out")
         return self.acks(0)
@@ -47,17 +47,16 @@ class User_management:
 
     def connect_client(self, user2):
         print(f"trying to connect with {user2[0]}")
-        print(f"online users: {[x.get_user() for x in self.online_users]}")
+        print(f"online users: {self.online_users}")
 
         for user in self.online_users:
-            name, ip = user.get_user()
             usrr = user2[0]
             print('trying:', usrr)
-            if usrr==name: 
+            if usrr==user: 
                 print('found', usrr)
-                return user.get_user(), ip, self.acks(0)
+                return user.get_user(), self.acks(0)
 
-        return 0, 0, self.acks(1) # user currently not online, must send an offline message
+        return None, self.acks(1) # user currently not online, must send an offline message
 
     def group_chat(self, group_name, user, text):
 
@@ -73,14 +72,6 @@ class User_management:
         return ack_error_codes.get(numeric)
 
 
-class User:
-    def __init__(self, name, ip_adrr):
-        self.name = name
-        self.ip = ip_adrr
-
-    def get_user(self):
-        return (self.name, self.ip)
-    
     
 class Database_manager:
     def __init__(self):

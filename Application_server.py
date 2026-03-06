@@ -11,8 +11,8 @@ class Server:
         self.user_man = usm()
         self.start_server()
 
-    users_connectionsockets = {} # identify or map with ip address
-    users_ports = {} # port numbers identified or mapped with ip, addr = (ip, port)
+    users_connectionsockets = {} # identify or map sockets with with username
+    users_addr = {} # port numbers identified or mapped with username, username: addr = (ip, port)
         
     # Function that processes requests and returns responses to the client application
     """
@@ -25,7 +25,7 @@ class Server:
     
     """
 
-    def response(self, ip_adrr, command, data = ()):
+    def response(self, sender_id, command, data = ()):
 
         requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE", 5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST", 8:"GTEXT_MESSAGE"}
 
@@ -42,12 +42,12 @@ class Server:
 
         if command==requests.get(1): 
             x, y = data
-            ack_responce = login(x, y, ip_adrr)
+            ack_responce = login(x, y)
             return ack_responce
         
         if command==requests.get(2): 
             user,  = data
-            ack_responce = logout(user, ip_adrr)
+            ack_responce = logout(user, sender_id)
             return ack_responce
         
         if command==requests.get(3): 
@@ -72,12 +72,16 @@ class Server:
         
         if command==requests.get(7): 
             user2 = data
-            user_ , ip ,ack_responce = connect_request(user2)
-            addr = Server.get_user(ip)
+            user_ , ack_responce = connect_request(user2)
+
+            if user_ is None:
+                return self.build_control_message(ack_responce, 100, 1, body={"ERROR":"USER NOT FOUND ON SYSTEM"})
+            
+            addr = Server.get_user(user_)
             data = self.build_control_message("ACK", 100,0, {"messsage": addr})
-            print(ip)
-            connection_socket = Server.users_connectionsockets.get(ip)
-            print(connection_socket)
+            connection_socket = Server.users_addr.get(user_)
+
+            print("sent peer address")
             self.send_to_client(connection_socket, data)
             return ack_responce
         
@@ -110,7 +114,7 @@ class Server:
             else:
                 body_tuple = tuple(body.values())
 
-            return (sender_id, msg_type, command, timestamp, body_length, body_tuple)
+            return (sender_id, msg_type, command, timestamp, body_length, body_tuple, body)
 
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON format")
@@ -153,7 +157,7 @@ class Server:
             message["body"] = body
 
         # Convert dict JSON string bytes (ready for TCP send)
-        return json.dumps(message).encode()
+        return json.dumps(message)
 
 
     def build_control_message(self, command, seq_no, status_code, body=None):
@@ -189,23 +193,33 @@ class Server:
         if body_length > 0:
             message["body"] = body
 
-        return json.dumps(message).encode()
+        return json.dumps(message)
     
 
     def send_to_client(self, connection_socket, data):
-        connection_socket.send(data) # send modified message to the server socket (then back to the current client)
+        connection_socket.send(data.encode()) # send modified message to the server socket (then back to the current client)
 
-    def receive_client_data(self, connection_socket):
-        while True:
+    def receive_client_data(self, connection_socket, num=1):
+        # num = 0 (logging in state) or 1 (Passed login and ready to transmit data) 
+        if num==1:
+            while True:
+                data = connection_socket.recv(1024).decode()
+                ctrl_msg = self.process_data(data)
+                if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
+                else: pass
+        else:
             data = connection_socket.recv(1024).decode()
-            ctrl_msg = self.process_data(data)
-            if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
-            else: pass
+            login_msg = self.process_data(data)
+            self.send_to_client(connection_socket, login_msg)
+            client_json= self.parse_json(data)
+            username = client_json[0]
+            return username
+            
 
         
     def process_data(self, raw_data): # raw_data is a JSON
 
-        sender_id, msg_type, command, timestamp, body_length, body_tuple = self.parse_json(raw_data)
+        sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
         if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
             print(body_tuple)
@@ -213,7 +227,7 @@ class Server:
 
         if command=="CONNECT_REQUEST":
             ack = self.response(sender_id, command, body_tuple)
-            return       
+                  
 
         # can only be a group message on the server side
         if msg_type =="DATA":
@@ -227,18 +241,17 @@ class Server:
         client_threads = threading.Thread(target=self.receive_client_data, args=(connection_socket,))
         client_threads.start()
 
-    def get_user(ip_addr):
-        return (ip_addr, Server.users_ports.get(ip_addr))
+    def get_user(username):
+        return Server.users_ports.get(username)
     
     def establish_connection(self):
         while True:
             connection_socket, addr = self.server_socket.accept() #accepts clients establishing connections
-            ip_address, port_number = addr
             print("Connected to client")
-            Server.users_ports[ip_address] = port_number
-            print(Server.users_connectionsockets)
+            username = self.receive_client_data(connection_socket, 0)
+            Server.users_addr[username] = addr
+            Server.users_connectionsockets[username] = connection_socket
             print(Server.users_ports)
-            Server.users_connectionsockets[ip_address] = connection_socket
             threading.Thread(target=self.receive_client_data, args=(connection_socket,), daemon=True).start()
 
 
