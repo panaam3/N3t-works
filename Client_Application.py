@@ -6,7 +6,7 @@ import threading
 
 
 class client_application:
-    def __init__(self, username, ip_addr='localhost', peer_port=8000):
+    def __init__(self, username, ip_addr, peer_port=8000):
         self.server_ip = None
         self.server_port = None
         self.username = username
@@ -76,6 +76,7 @@ class client_application:
         self.server_ip = server_ip
         self.server_port = server_port
         self.udp_socket = socket(AF_INET, SOCK_DGRAM) 
+        self.udp_socket.bind((self.ip_addr, 0))
         print("connected to server via udp")
 
     def send_command(self, command, body):
@@ -83,7 +84,7 @@ class client_application:
         header  = {
             "msgType": "COMMAND",
             "command": command,
-            "senderId": self.ip_addr,
+            "senderId": self.username,
             "timestamp": datetime.datetime.now().isoformat(),
             "bodyLength": len((json.dumps(body)).encode())
              }
@@ -143,7 +144,7 @@ class client_application:
         
         elif header["command"] == "SEND_TEXT":
             display_message = body['message']
-            print("Them: ", display_message)
+            print(f"{header['senderId']}: ", display_message)
 
         elif header["command"] == "GTEXT_MESSAGE":
             display_message = body['message']
@@ -211,7 +212,7 @@ class client_application:
     
 def main():
     username = input("Enter your username: ")
-    ip_addr = input("Enter your IP address (or press Enter for localhost): ") or 'localhost'
+    ip_addr = input("Enter your IP address: ")
     client = client_application(username, ip_addr)
 
     server_ip = input("Enter server IP address: ")
@@ -317,30 +318,33 @@ def main():
         main_menu1()
     #will need to do a while loop when we are still connected to the server
     main_menu1()
-    choice = input("Enter your choice: ")
-    if choice == '1':
-        register()
-    elif choice == '2':
-        login()
-        main_menu2()
-        choice2 = input("Enter your choice: ")
-        if choice2 == '1':
-            one_on_one_chat()
-        elif choice2 == '2':
-            create_group()
-        elif choice2 == '3':
-            view_online_users()
-        elif choice2 == '4':
-            logout()
-            #break
+    logged_in = True
+    while logged_in and client.client_socket:
+        
+        choice = input("Enter your choice: ")
+        if choice == '1':
+            register()
+        elif choice == '2':
+            login()
+            main_menu2()
+            choice2 = input("Enter your choice: ")
+            if choice2 == '1':
+                one_on_one_chat()
+            elif choice2 == '2':
+                create_group()
+            elif choice2 == '3':
+                view_online_users()
+            elif choice2 == '4':
+                logout()
+                break
+            else:
+                print("Invalid choice. Please try again.")
         else:
             print("Invalid choice. Please try again.")
-    else:
-        print("Invalid choice. Please try again.")
+    print("Disconnected from server.")
 
 if __name__ == "__main__":
     main()
-
 
 
 #196.47.246.187
