@@ -78,7 +78,7 @@ class Server:
                 return self.build_control_message(ack_responce, 100, 1, body={"ERROR":"USER NOT FOUND ON SYSTEM"})
             
             addr = Server.get_userAddr(user_)
-            data = self.build_control_message("ACK", 100,0, {"messsage": addr})
+            data = self.build_control_message("ACK", 100,0, {"message": addr})
             connection_socket = Server.users_connectionsockets.get(user_)
 
             print("sent peer address")
