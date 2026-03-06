@@ -77,9 +77,9 @@ class Server:
             if user_ is None:
                 return self.build_control_message(ack_responce, 100, 1, body={"ERROR":"USER NOT FOUND ON SYSTEM"})
             
-            addr = Server.get_user(user_)
+            addr = Server.get_userAddr(user_)
             data = self.build_control_message("ACK", 100,0, {"messsage": addr})
-            connection_socket = Server.users_addr.get(user_)
+            connection_socket = Server.users_connectionsockets.get(user_)
 
             print("sent peer address")
             self.send_to_client(connection_socket, data)
@@ -284,7 +284,10 @@ class Server:
         client_threads = threading.Thread(target=self.receive_client_data, args=(connection_socket,))
         client_threads.start()
 
-    def get_user(username):
+    def get_userSocket(username):
+        return Server.users_connectionsockets.get(username)
+    
+    def get_userAddr(username):
         return Server.users_addr.get(username)
     
     def establish_connection(self):
