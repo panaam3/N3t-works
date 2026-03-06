@@ -6,7 +6,7 @@ import threading
 
 
 class client_application:
-    def __init__(self, username, ip_addr='localhost', peer_port=8000):
+    def __init__(self, username, ip_addr, peer_port=8000):
         self.server_ip = None
         self.server_port = None
         self.username = username
@@ -212,7 +212,7 @@ class client_application:
     
 def main():
     username = input("Enter your username: ")
-    ip_addr = input("Enter your IP address (or press Enter for localhost): ") or 'localhost'
+    ip_addr = input("Enter your IP address: ")
     client = client_application(username, ip_addr)
 
     server_ip = input("Enter server IP address: ")
