@@ -78,8 +78,9 @@ class Server:
                 return self.build_control_message(ack_responce, 100, 1, body={"ERROR":"USER NOT FOUND ON SYSTEM"})
             
             addr = Server.get_userAddr(user_)
-            data = self.build_control_message("ACK", 100,0, {"message": addr})
-            connection_socket = Server.users_connectionsockets.get(user_)
+            data = self.build_control_message("ACK", 100, 0, {"message": addr})
+            print(data)
+            connection_socket = Server.users_connectionsockets.get(sender_id)
 
             print("sent peer address")
             self.send_to_client(connection_socket, data)
@@ -160,7 +161,7 @@ class Server:
         return json.dumps(message)
 
 
-    def build_control_message(self, command, seq_no, status_code, body=None):
+    def build_control_message(self, command, seq_no, status_code, body):
         """
         command: "ACK" or "ERROR"
         seq_no: sequence number of the original request
