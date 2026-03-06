@@ -203,10 +203,15 @@ class Server:
         # num = 0 (logging in state) or 1 (Passed login and ready to transmit data) 
         if num==1:
             while True:
-                data = connection_socket.recv(1024).decode()
-                ctrl_msg = self.process_data(data)
-                if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
-                else: pass
+                try:
+                    data = connection_socket.recv(1024).decode()
+                    print("connected, everything good")
+                    ctrl_msg = self.process_data(data)
+                    if ctrl_msg: self.send_to_client(connection_socket, ctrl_msg)
+                    else: pass
+        
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    print("disconnected")
         else:
             data = connection_socket.recv(1024).decode()
             login_msg = self.process_data(data)
@@ -218,24 +223,27 @@ class Server:
 
         
     def process_data(self, raw_data): # raw_data is a JSON
-        print(raw_data)
-        sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
+        
+        if raw_data=="\n":
+            pass
+        else :
+            sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
-        if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
-            print(body_tuple)
-            ack= self.response(sender_id, command, body_tuple) # (name, password)
+            if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
+                print(body_tuple)
+                ack= self.response(sender_id, command, body_tuple) # (name, password)
 
-        if command=="CONNECT_REQUEST":
-            ack = self.response(sender_id, command, body_tuple)
-                  
+            if command=="CONNECT_REQUEST":
+                ack = self.response(sender_id, command, body_tuple)
+                    
 
-        # can only be a group message on the server side
-        if msg_type =="DATA":
-            # add a handler here for possible errors in version2 
-            ack  = self.response(sender_id, command, body_tuple)
+            # can only be a group message on the server side
+            if msg_type =="DATA":
+                # add a handler here for possible errors in version2 
+                ack  = self.response(sender_id, command, body_tuple)
 
-        if self.user_man.acks(0) == ack: return self.build_control_message(ack, 100, 0, {"":""})
-        return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})
+            if self.user_man.acks(0) == ack: return self.build_control_message(ack, 100, 0, {"":""})
+            return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})
 
     def listen_for_data(self, connection_socket):
         client_threads = threading.Thread(target=self.receive_client_data, args=(connection_socket,))
