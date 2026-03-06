@@ -46,17 +46,18 @@ class User_management:
         self.db.remove_to_group(group_name, user)
 
     def connect_client(self, user2):
-        print(f"trying to connect with {user2}")
-        for usr in self.online_users:
-            nm, ip = usr.get_user()
-            print(f"name: {nm}, ip: {ip}")
+        print(f"trying to connect with {user2[0]}")
+        print(f"online users: {[x.get_user() for x in self.online_users]}")
 
         for user in self.online_users:
             name, ip = user.get_user()
-            user2 = user2[0]
-            if name==user2: return user.get_user(), ip, self.acks(0)
+            usrr = user2[0]
+            print('trying:', usrr)
+            if usrr==name: 
+                print('found', usrr)
+                return user.get_user(), ip, self.acks(0)
 
-        return None, None, self.acks(1) # user currently not online, must send an offline message
+        return 0, 0, self.acks(1) # user currently not online, must send an offline message
 
     def group_chat(self, group_name, user, text):
 
