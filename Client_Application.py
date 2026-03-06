@@ -157,10 +157,10 @@ class client_application:
 
     def send_message_tcp(self, message):
         # send message to the server
-        self.client_socket.send((json.dumps(message)+ "\n").encode())
+        self.client_socket.send((json.dumps(message)+ '\n').encode())
 
     def send_message_peer(self, message):
-        self.peer_socket.send((json.dumps(message)+ "\n").encode())
+        self.peer_socket.send((json.dumps(message)+ '\n').encode())
 
     def get_connect_message_for_peer(self, timeout=10):
         self.waiting_for_response = True
@@ -252,7 +252,6 @@ def main():
         register_message = client.send_command("REGISTER", {"username": client.username, "password": password})
         client.send_message_tcp(register_message)
         time.sleep(1)
-        login()
         # wait for ACK or ERROR message from the server and process it in receive_message function
     
 
@@ -354,6 +353,7 @@ def main():
     choice = input("Enter your choice: ")
     if choice == '1':
         register()
+        login()
     elif choice == '2':
         login()
     while logged_in:
@@ -367,13 +367,14 @@ def main():
             view_online_users()
         elif choice2 == '4':
             logout()
-            break
+            break            
         else:
             print("Invalid choice. Please try again.")
     print("Disconnected from server.")
 
 if __name__ == "__main__":
     main()
+
 
 
 
