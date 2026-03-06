@@ -285,7 +285,7 @@ class Server:
         client_threads.start()
 
     def get_user(username):
-        return Server.users_ports.get(username)
+        return Server.users_addr.get(username)
     
     def establish_connection(self):
         while True:
