@@ -229,7 +229,6 @@ class client_application:
     
 def main():
     client = None
-    logged_in = False
     server_ip = input("Enter server IP address: ")
     server_port = 12000    #int(input("Enter server port number: ")) 
     
@@ -266,7 +265,6 @@ def main():
         client.udp_connect(server_ip, server_port)
         login_message = client.send_command("LOGIN", {"username": client.username, "password": password})
         client.send_message_tcp(login_message)
-        logged_in = True
         #main_menu2()
         # wait for ACK or ERROR message from the server and process it in receive_message function
         # I'm waiting for the server to check if the login is successful and then send an ACK message, if the login is unsuccessful, it will send an ERROR message and I will handle it in the receive_message function
@@ -356,7 +354,7 @@ def main():
         login()
     elif choice == '2':
         login()
-    while logged_in:
+    while True:
         main_menu2()
         choice2 = input("Enter your choice: ")
         if choice2 == '1':
@@ -374,8 +372,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
 #196.47.246.187
