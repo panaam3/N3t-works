@@ -218,7 +218,7 @@ class Server:
 
         
     def process_data(self, raw_data): # raw_data is a JSON
-
+        print(raw_data)
         sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
         if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
@@ -251,8 +251,8 @@ class Server:
             username = self.receive_client_data(connection_socket, 0)
             Server.users_addr[username] = addr
             Server.users_connectionsockets[username] = connection_socket
-            print(Server.users_ports)
-            threading.Thread(target=self.receive_client_data, args=(connection_socket,), daemon=True).start()
+            print(Server.users_addr)
+            threading.Thread(target=self.receive_client_data, args=(connection_socket,1), daemon=True).start()
 
 
     def terminate(self): # server closes
