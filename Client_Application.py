@@ -14,6 +14,7 @@ class client_application:
         self.username = username
         self.ip_addr = ip_addr
         self.peer_port = peer_port
+        self.peer_ip = None
         self.client_socket = None
         self.udp_socket = None
         self.peer_socket = None
@@ -171,8 +172,9 @@ class client_application:
             body = message_dict["body"]
 
             if header['command'] == "ACK":
-                client_ip, client_port = body['message']
-                self.tcp_connect_peer(client_ip, self.peer_port)
+                print(message_dict)
+                self.peer_ip, _port = body['message']
+                self.tcp_connect_peer(self.peer_ip, self.peer_port)
                 print("connected to target client")
                 return True
             else:
@@ -372,6 +374,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 #196.47.246.187
