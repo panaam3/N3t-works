@@ -229,7 +229,7 @@ class client_application:
     
 def main():
     client = None
-
+    logged_in = False
     server_ip = input("Enter server IP address: ")
     server_port = 12000    #int(input("Enter server port number: ")) 
     
@@ -252,6 +252,7 @@ def main():
         register_message = client.send_command("REGISTER", {"username": client.username, "password": password})
         client.send_message_tcp(register_message)
         time.sleep(1)
+        login()
         # wait for ACK or ERROR message from the server and process it in receive_message function
     
 
@@ -266,6 +267,7 @@ def main():
         client.udp_connect(server_ip, server_port)
         login_message = client.send_command("LOGIN", {"username": client.username, "password": password})
         client.send_message_tcp(login_message)
+        logged_in = True
         #main_menu2()
         # wait for ACK or ERROR message from the server and process it in receive_message function
         # I'm waiting for the server to check if the login is successful and then send an ACK message, if the login is unsuccessful, it will send an ERROR message and I will handle it in the receive_message function
@@ -349,14 +351,13 @@ def main():
         main_menu1()
     #will need to do a while loop when we are still connected to the server
     main_menu1()
-    while client.client_socket:
-        
-        choice = input("Enter your choice: ")
-        if choice == '1':
-            register()
-            main_menu1()
-        elif choice == '2':
-            login()
+    choice = input("Enter your choice: ")
+    if choice == '1':
+        register()
+    elif choice == '2':
+        login()
+    while logged_in:
+        while client.client_socket:
             main_menu2()
             choice2 = input("Enter your choice: ")
             if choice2 == '1':
@@ -370,12 +371,11 @@ def main():
                 break
             else:
                 print("Invalid choice. Please try again.")
-        else:
-            print("Invalid choice. Please try again.")
-    print("Disconnected from server.")
+        print("Disconnected from server.")
 
 if __name__ == "__main__":
     main()
+
 
 
 #196.47.246.187
