@@ -172,7 +172,7 @@ class client_application:
 
             if header['command'] == "ACK":
                 client_ip, client_port = body['message']
-                self.tcp_connect_peer(client_ip, client_port)
+                self.tcp_connect_peer(client_ip, self.peer_port)
                 print("connected to target client")
                 return True
             else:
