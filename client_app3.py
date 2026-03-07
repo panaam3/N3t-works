@@ -468,14 +468,21 @@ def main():
 
         if not client.listener_started:
             threading.Thread(target=client.start_peer_listener, daemon=True).start()
-            #time.sleep(0.5)
+            time.sleep(0.5)
 
-        user = input("Enter the username of the person you want to chat with: ").strip()
+        req_or_accept = int(input("1. Request User\n2. Accept Connection\n").strip())
+        if req_or_accept == 1:
+            user = input("Enter the username of the person you want to chat with: ").strip()
 
-        if not user:
-            print("No username entered.")
-            return
-
+            if not user:
+                print("No username entered.")
+                return
+        elif req_or_accept == 2:
+            print("Waiting for incoming connection...")
+            if not client.peer_connected_event.wait(timeout=30):
+                print("Timed out waiting for connection.")
+                return
+            print("Peer connected! Starting chat.")
         # If a peer already connected, just use that
         if client.peer_connected_event.is_set():
             print("A peer is already connected. Starting chat.")
