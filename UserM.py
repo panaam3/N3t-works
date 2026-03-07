@@ -1,17 +1,46 @@
-# User Management
+# User Management Prototype
+# March 2026
+# author: Phiwumusa Ngidi
+
 import pandas as pd
 import numpy as np
 
 
 class User_management:
+    """
+    Class: User_management
+
+    This class handles user related operations for the prototype system. 
+    It is responsible for managing online users, handling login and logout, 
+    registering users, managing group creation and membership updates, returning acknowledgement responses, 
+    and attempting peer-to-peer user connection lookup.
+    """
     def __init__(self):
-        self.online_users = [] # list of USER OBJECTS (class user [from client app], user:={name: ip address})
+        """
+        __init__()
+
+        This constructor initialises the user management system. 
+        It creates a list for tracking online users and initialises the database manager that is used for reading and writing user and group data.
+        """
+        self.online_users = []  # list of USER OBJECTS (class user [from client app], user:={name: ip address})
         self.db = Database_manager()
 
     def update_online_users(self, user):
+        """
+        update_online_users(user)
+
+        This method adds a user to the list of currently online users.
+        """
         self.online_users.append(user)
 
     def login(self, name, password):
+        """
+        login(name, password)
+
+        This method attempts to log a user into the system by verifying the given username and password against the database. 
+        If the credentials are correct, the user is added to the online users list and a success acknowledgement is returned. 
+        Otherwise, an error acknowledgement is returned.
+        """
         print("logging in")
         
         user = name
@@ -19,48 +48,87 @@ class User_management:
         print(self.online_users)
         if self.db.verify_user(name, password): 
             self.update_online_users(user)
-            return self.acks(0) # change this to some ack message
+            return self.acks(0)  # change this to some ack message
         return self.acks(1)
 
-
     def logout(self, user):
+        """
+        logout(user)
+
+        This method removes a user from the list of online users. 
+        It searches through the stored online user objects, compares their names with the given user, removes the matching entry, and returns a success acknowledgement.
+        """
         for usr in self.online_users:
             name, ip = usr.get_user()
-            if user==name :
+            if user == name:
                 self.online_users.remove(usr)
         print("logging out")
         return self.acks(0)
     
     def register(self, user, password):
+        """
+        register(user, password)
+
+        This method registers a new user by adding their username and password to the database.
+         After registration, it returns a success acknowledgement.
+        """
         self.db.add_user(user, password)
         print("registering")
         return self.acks(0)
 
-    def create(self, user, group_name, chat_users = []):
+    def create(self, user, group_name, chat_users=[]):
+        """
+        create(user, group_name, chat_users=[])
+
+        This method creates a new group chat. 
+        The creator is added to the beginning of the group member list, and the full group is then stored in the database.
+        """
         chat_users = [user] + chat_users
         self.db.add_group(group_name, chat_users)
         return self.acks(0)
 
     def join(self, group_name, user):
+        """
+        join(group_name, user)
+
+        This method adds a user to an existing group in the database.
+        """
         self.db.add_to_group(group_name, user)
 
     def exit(self, group_name, user):
+        """
+        exit(group_name, user)
+
+        This method removes a user from an existing group in the database.
+        """
         self.db.remove_to_group(group_name, user)
 
     def connect_client(self, user2):
+        """
+        connect_client(user2)
+
+        This method attempts to find a requested user in the list of currently online users. 
+        If the user is found, the method returns that user together with a success acknowledgement. 
+        If the user is not found, it returns None and an error acknowledgement.
+        """
         print(f"trying to connect with {user2[0]}")
         print(f"online users: {self.online_users}")
 
         for user in self.online_users:
             usrr = user2[0]
             print('trying:', usrr)
-            if usrr==user: 
+            if usrr == user:
                 print('found', usrr)
                 return user, self.acks(0)
 
-        return None, self.acks(1) # user currently not online, must send an offline message
+        return None, self.acks(1)  # user currently not online, must send an offline message
 
     def group_chat(self, group_name, user, text):
+        """
+        group_chat(group_name, user, text)
+
+        This method is intended to send a message in a group chat context. In its current prototype form, it loops through connected clients and attempts to send the given text to each one. The method appears incomplete because self.clients is not defined in this class.
+        """
 
         # get group method
         for addr, conn in self.clients.items():
@@ -70,54 +138,97 @@ class User_management:
                 pass
 
     def acks(self, numeric):
-        ack_error_codes = {0:"ACK", 1:"ERROR"}
+        """
+        acks(numeric)
+
+        This method converts a numeric acknowledgement code into its string equivalent. In the current implementation, 0 maps to ACK and 1 maps to ERROR.
+        """
+        ack_error_codes = {0: "ACK", 1: "ERROR"}
         return ack_error_codes.get(numeric)
 
 
-    
 class Database_manager:
+    """
+    Class: Database_manager
+
+    This class handles persistent storage for the prototype system using comma-separated value files. It is responsible for reading user data, verifying users, adding users, managing group information, and refreshing in-memory data from file.
+    """
     def __init__(self):
+        """
+        __init__()
+
+        This constructor initialises the file paths used for user and group data and loads both files into pandas DataFrames.
+        """
         self.file_path = 'database.csv'
         self.groups_path = 'groups_file.csv'
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
 
     def check_user(self, name):
+        """
+        check_user(name)
+
+        This method checks whether a given username exists in the user database. It refreshes the data from file, reads the usernames, and returns True if a match is found. Otherwise, it returns False.
+        """
         self.refresh()
         names = list(self.server_data['user_name'])
         for n in names:
-            if n==name.lower(): return True
+            if n == name.lower():
+                return True
         return False
     
     def verify_user(self, name, password):
+        """
+        verify_user(name, password)
+
+        This method verifies whether the given username and password match an existing record in the user database. It refreshes the data, compares the username and password entries row by row, and returns True if a valid match is found. Otherwise, it returns False.
+        """
         self.refresh()
         passwords = list(self.server_data['login_password'])
         names = list(self.server_data['user_name'])
         print("names", names, " passwords", passwords)
-        i = 0 
-        for pw in passwords: 
-            if pw==password and names[i]==name:
+        i = 0
+        for pw in passwords:
+            if pw == password and names[i] == name:
                 return True
-            i+=1
+            i += 1
         return False
     
     def add_user(self, name, password):
+        """
+        add_user(name, password)
 
+        This method adds a new user to the database. It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
+        """
         self.refresh()
-        df = pd.DataFrame({"user_name":[name], "login_password":[password]})
+        df = pd.DataFrame({"user_name": [name], "login_password": [password]})
         df.to_csv(self.file_path, mode="a", header=False, index=False)
         self.refresh()
 
     def refresh(self):
+        """
+        refresh()
+
+        This method reloads both the user data and the group data from their respective files so that the in-memory DataFrames remain up to date.
+        """
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
     
     def add_to_group(self, group_name, user):
+        """
+        add_to_group(group_name, user)
+
+        This method adds a single user to a group by refreshing the data and then delegating the actual insertion to add_group.
+        """
         self.refresh()
         self.add_group(group_name, [user])
         
+    def add_group(self, column_name, names=[]):
+        """
+        add_group(column_name, names=[])
 
-    def add_group(self, column_name, names= []):
+        This method creates a group column if it does not already exist and inserts the given list of usernames into that group. If there are not enough rows in the DataFrame, the DataFrame is expanded before inserting the values. The updated group data is then saved back to file.
+        """
         self.refresh()
         
         values_length = len(names)
@@ -142,6 +253,11 @@ class Database_manager:
         self.group_data.to_csv(self.groups_path, index=False)
 
     def remove_to_group(self, group_name, user):
+        """
+        remove_to_group(group_name, user)
+
+        This method removes a user from a specified group by replacing that user's entry with a missing value. After that, it removes any rows that are entirely empty and saves the updated group data back to file.
+        """
         self.refresh()
         self.group_data.loc[self.group_data[group_name] == user, group_name] = np.nan
 
