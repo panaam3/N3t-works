@@ -48,8 +48,6 @@ class client_application:
         self.udp_socket = socket(AF_INET, SOCK_DGRAM)
         self.udp_socket.bind(("", 0))
 
-        print("connected to server via udp")
-
     def tcp_connect_peer(self, peer_ip, peer_port):
         try:
             peer_socket = socket(AF_INET, SOCK_STREAM)
