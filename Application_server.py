@@ -1,99 +1,150 @@
-# Application Server
+# Application Server Prototype
+# March 2026
+# @author: Phiwumusa Ngidi
+
 from socket import *
 from UserM import User_management as usm
 import json
 from datetime import datetime
 import threading
 
+
 class Server:
+    """
+    Class: Server
+
+    This class represents the application server for the
+    prototype system. It is responsible for starting the
+    server, accepting client connections, receiving client
+    messages, processing protocol requests, and sending
+    responses back to clients.
+    """
 
     def __init__(self):
+        """
+        __init__()
+
+        This constructor initialises the server by creating
+        a user management object and then starting the
+        server immediately.
+        """
         self.user_man = usm()
         self.start_server()
 
-    users_connectionsockets = {} # identify or map sockets with with username
-    users_addr = {} # port numbers identified or mapped with username, username: addr = (ip, port)
-        
+    users_connectionsockets = {}  # identify or map sockets with with username
+    users_addr = {}  # port numbers identified or mapped with username, username: addr = (ip, port)
+
     # Function that processes requests and returns responses to the client application
     """
-      LOGIN > Initiates a client session.
-    • LOGOUT > Terminates a client session.
-    • REGISTER > Registers a new client identity.
-    • JOIN > Adds a client to a group communication room.
-    • EXIT > Removes a client from a group communication room.
-    • CONNECT_REQUEST > client asks the server for another clients IP/port
-    
+    This server handles the main protocol commands used by
+    the client application. These include login, logout,
+    register, group creation, group join, group exit, peer
+    connection requests, and group text messages.
     """
 
-    def response(self, sender_id, command, data = ()):
+    def response(self, sender_id, command, data=()):
+        """
+        response(sender_id, command, data=())
 
-        requests = {1:"LOGIN", 2:"LOGOUT", 3:"REGISTER", 4:"CREATE", 5:"JOIN" , 6:"EXIT", 7:"CONNECT_REQUEST", 8:"GTEXT_MESSAGE"}
+        This method processes a client command and routes it
+        to the appropriate user management function. It uses
+        the command value to determine which operation must
+        be performed, then returns the corresponding server
+        acknowledgement or response message.
+        """
+
+        requests = {
+            1: "LOGIN",
+            2: "LOGOUT",
+            3: "REGISTER",
+            4: "CREATE",
+            5: "JOIN",
+            6: "EXIT",
+            7: "CONNECT_REQUEST",
+            8: "GTEXT_MESSAGE"
+        }
 
         # user functions
-        login = lambda x, y:self.user_man.login(x, y)
+        login = lambda x, y: self.user_man.login(x, y)
         register = lambda x, y: self.user_man.register(x, y)
-        logout = lambda user:self.user_man.logout(user) 
-        join = lambda user, groupID:self.user_man.join(user, groupID)
-        exit = lambda user:self.user_man.exit(user)
-        connect_request = lambda user2 :self.user_man.connect_client(user2)
-        group_message = lambda user1, text :self.user_man.group_chat(user1, text)
-        create = lambda user, name, chat:self.user_man.create(user, name, chat)
+        logout = lambda user: self.user_man.logout(user)
+        join = lambda user, groupID: self.user_man.join(user, groupID)
+        exit = lambda user: self.user_man.exit(user)
+        connect_request = lambda user2: self.user_man.connect_client(user2)
+        group_message = lambda user1, text: self.user_man.group_chat(user1, text)
+        create = lambda user, name, chat: self.user_man.create(user, name, chat)
 
-
-        if command==requests.get(1): 
+        if command == requests.get(1):
             x, y = data
             ack_responce = login(x, y)
             return ack_responce
-        
-        if command==requests.get(2): 
-            user,  = data
+
+        if command == requests.get(2):
+            user, = data
             ack_responce = logout(user, sender_id)
             return ack_responce
-        
-        if command==requests.get(3): 
+
+        if command == requests.get(3):
             x, y = data
             ack_responce = register(x, y)
             return ack_responce
-        
-        if command==requests.get(4): 
+
+        if command == requests.get(4):
             user, name, members = data
             ack_responce = create(user, name, members)
             return ack_responce
-        
-        if command==requests.get(5): 
+
+        if command == requests.get(5):
             user, groupID = data
             ack_responce = join(user, groupID)
-            return ack_responce        
+            return ack_responce
 
-        if command==requests.get(6): 
+        if command == requests.get(6):
             user, groupID = data
             ack_responce = exit(user, groupID)
-            return ack_responce 
-        
-        if command==requests.get(7): 
+            return ack_responce
+
+        if command == requests.get(7):
             user2 = data
-            user_ , ack_responce = connect_request(user2)
+            user_, ack_responce = connect_request(user2)
 
             if user_ is None:
-                return self.build_control_message(ack_responce, 100, 1, body={"ERROR":"USER NOT FOUND ON SYSTEM"})
-            
+                return self.build_control_message(
+                    ack_responce,
+                    100,
+                    1,
+                    body={"ERROR": "USER NOT FOUND ON SYSTEM"}
+                )
+
             addr = Server.get_userAddr(user_)
-            data = self.build_control_message("ACK", 100, 0, {"message": addr})
+            data = self.build_control_message(
+                "ACK",
+                100,
+                0,
+                {"message": addr}
+            )
             print(data)
             connection_socket = Server.users_connectionsockets.get(sender_id)
 
             print("sent peer address")
             self.send_to_client(connection_socket, data)
             return ack_responce
-        
-        if command==requests.get(8): 
+
+        if command == requests.get(8):
             user, groupID, msg = data
             ack_responce = group_message(user, groupID, msg)
-            return ack_responce 
-        
-
+            return ack_responce
 
     def parse_json(self, raw_json):
+        """
+        parse_json(raw_json)
+
+        This method parses a raw JSON string into its
+        protocol components. It extracts the header fields,
+        reads the body if present, converts the body values
+        into a tuple, and returns all parsed information in
+        a structured form.
+        """
         try:
             # Convert JSON string Python dict
             message = json.loads(raw_json)
@@ -115,16 +166,40 @@ class Server:
             else:
                 body_tuple = tuple(body.values())
 
-            return (sender_id, msg_type, command, timestamp, body_length, body_tuple, body)
+            return (
+                sender_id,
+                msg_type,
+                command,
+                timestamp,
+                body_length,
+                body_tuple,
+                body
+            )
 
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON format")
         except Exception as e:
             raise ValueError(f"Malformed MMMP message: {e}")
-        
 
+    def build_message(
+        self,
+        msg_type,
+        command,
+        sender_id,
+        body=None,
+        seq_no=None,
+        status_code=None
+    ):
+        """
+        build_message(msg_type, command, sender_id, body=None,
+        seq_no=None, status_code=None)
 
-    def build_message(self, msg_type, command, sender_id, body=None, seq_no=None, status_code=None):
+        This method builds a general protocol message in JSON
+        format. It creates the header, calculates the body
+        length, includes optional fields where necessary, and
+        returns the final message as a JSON string ready to
+        be sent over the network.
+        """
         # Default empty body
         if body is None:
             body = {}
@@ -160,13 +235,16 @@ class Server:
         # Convert dict JSON string bytes (ready for TCP send)
         return json.dumps(message)
 
-
     def build_control_message(self, command, seq_no, status_code, body):
         """
-        command: "ACK" or "ERROR"
-        seq_no: sequence number of the original request
-        status_code: protocol status code (e.g., 2 = success, 5 = error)
-        body: optional dict (only used for ERROR typically)
+        build_control_message(command, seq_no, status_code,
+        body)
+
+        This method builds a control message used by the
+        server to send acknowledgement or error responses.
+        It creates a control header, calculates the body
+        length, attaches the body if present, and returns
+        the final JSON string.
         """
 
         if body is None:
@@ -195,14 +273,33 @@ class Server:
             message["body"] = body
 
         return json.dumps(message)
-    
 
     def send_to_client(self, connection_socket, data):
-        connection_socket.send((data + '\n').encode())# send modified message to the server socket (then back to the current client)
+        """
+        send_to_client(connection_socket, data)
+
+        This method sends data to a connected client through
+        the given socket. A newline character is appended so
+        that message boundaries can be detected correctly on
+        the receiving side.
+        """
+        connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
 
     def receive_client_data(self, connection_socket, num=1):
+        """
+        receive_client_data(connection_socket, num=1)
 
-        
+        This method continuously receives incoming data from
+        a client socket. It collects chunks into a buffer,
+        separates complete messages using newline markers,
+        processes each message, and sends back any resulting
+        control response.
+
+        When num is 1, the method stays in continuous listen
+        mode. When num is not 1, it handles the initial
+        client message and returns the username.
+        """
+
         buffer = ''
 
         if num == 1:
@@ -255,62 +352,122 @@ class Server:
                     client_json = self.parse_json(raw_message)
                     username = client_json[0]
                     return username
-            
 
-        
-    def process_data(self, raw_data): # raw_data is a JSON
-        
+    def process_data(self, raw_data):  # raw_data is a JSON
+        """
+        process_data(raw_data)
+
+        This method processes a raw JSON message received by
+        the server. It parses the message, determines the
+        message type, routes it to the correct response
+        handler, and then builds the appropriate control
+        message to return to the client.
+        """
+
         if not raw_data or not raw_data.strip():
             return None
-        else :
+        else:
             sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
-            if msg_type =="COMMAND" and command!="CONNECT_REQUEST":
+            if msg_type == "COMMAND" and command != "CONNECT_REQUEST":
                 print(body_tuple)
-                ack= self.response(sender_id, command, body_tuple) # (name, password)
+                ack = self.response(sender_id, command, body_tuple)  # (name, password)
 
-            if command=="CONNECT_REQUEST":
+            if command == "CONNECT_REQUEST":
                 ack = self.response(sender_id, command, body_tuple)
-                    
 
             # can only be a group message on the server side
-            if msg_type =="DATA":
-                # add a handler here for possible errors in version2 
-                ack  = self.response(sender_id, command, body_tuple)
+            if msg_type == "DATA":
+                # add a handler here for possible errors in version2
+                ack = self.response(sender_id, command, body_tuple)
 
-            if self.user_man.acks(0) == ack: return self.build_control_message(ack, 100, 0, {"":""})
-            return self.build_control_message(ack, 100, 1, {"ERROR":"an error occured, error code 1"})
+            if self.user_man.acks(0) == ack:
+                return self.build_control_message(ack, 100, 0, {"": ""})
+            return self.build_control_message(
+                ack,
+                100,
+                1,
+                {"ERROR": "an error occured, error code 1"}
+            )
 
     def listen_for_data(self, connection_socket):
-        client_threads = threading.Thread(target=self.receive_client_data, args=(connection_socket,))
+        """
+        listen_for_data(connection_socket)
+
+        This method creates and starts a new thread that
+        listens for incoming data from a connected client.
+        It allows the server to handle client communication
+        concurrently.
+        """
+        client_threads = threading.Thread(
+            target=self.receive_client_data,
+            args=(connection_socket,)
+        )
         client_threads.start()
 
     def get_userSocket(username):
+        """
+        get_userSocket(username)
+
+        This method returns the stored connection socket for
+        a given username from the shared server mapping.
+        """
         return Server.users_connectionsockets.get(username)
-    
+
     def get_userAddr(username):
+        """
+        get_userAddr(username)
+
+        This method returns the stored network address for a
+        given username from the shared server mapping.
+        """
         return Server.users_addr.get(username)
-    
+
     def establish_connection(self):
+        """
+        establish_connection()
+
+        This method continuously accepts new client
+        connections. For each connected client, it receives
+        the initial message, stores the client's username,
+        address, and socket, and then starts a separate
+        thread to continue listening for that client's data.
+        """
         while True:
-            connection_socket, addr = self.server_socket.accept() #accepts clients establishing connections
+            connection_socket, addr = self.server_socket.accept()  # accepts clients establishing connections
             print("Connected to client")
             username = self.receive_client_data(connection_socket, 0)
             Server.users_addr[username] = addr
             Server.users_connectionsockets[username] = connection_socket
             print(Server.users_addr)
-            threading.Thread(target=self.receive_client_data, args=(connection_socket,1), daemon=True).start()
+            threading.Thread(
+                target=self.receive_client_data,
+                args=(connection_socket, 1),
+                daemon=True
+            ).start()
 
+    def terminate(self):  # server closes
+        """
+        terminate()
 
-    def terminate(self): # server closes
+        This method closes the main server socket and
+        terminates the server.
+        """
         self.server_socket.close()
 
-
     def start_server(self):
+        """
+        start_server()
+
+        This method creates the main server socket, binds it
+        to the chosen port, starts listening for incoming
+        client connections, and then calls the connection
+        establishment loop.
+        """
         server_port = 12000
-        self.server_socket = socket(AF_INET, SOCK_STREAM) # SOCK_STREAM: TCP 
-        self.server_socket.bind(('', server_port)) # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
-        self.server_socket.listen(50) # waits for a client connection
+        self.server_socket = socket(AF_INET, SOCK_STREAM)  # SOCK_STREAM: TCP
+        self.server_socket.bind(('', server_port))  # Binds or locks the port number to be 'server_port' instead of the assigning it to the OS
+        self.server_socket.listen(50)  # waits for a client connection
         print("Server listening on port", server_port)
         self.establish_connection()
 
@@ -318,59 +475,3 @@ class Server:
 if __name__ == "__main__":
     print("Starting server...")
     server = Server()
-
-"""
-
-1. command message: 
-{
-  "header": {
-    "msgType": "COMMAND",
-    "command": "CREATE",
-    "version": "MMMP/1.0",
-    "seqNo": 2001,
-    "senderId": "client_23",
-    "timestamp": "2026-02-27T10:02:15Z",
-    "bodyLength": 32
-  },
-  "body": {
-    "group-name": "csc3002f",
-    "members":["client_232", "client_222"]
-  }
-}
-
-2. control message example
-
-{
-  "header": {
-    "msgType": "CONTROL",
-    "command": "ACK",
-    "status_code":2,
-    "version": "MMMP/1.0",
-    "seqNo": 2001,
-    "senderId": "server",
-    "timestamp": "2026-02-27T10:02:15Z",
-    "bodyLength": 0
-  }
-}
-
-
-3. Data message
-
-{
-  "header": {
-    "msgType": "DATA",
-    "command": "GTEXT_MESSAGE",
-    "version": "MMMP/1.0",
-    "seqNo": 2002,
-    "senderId": "client_23"
-    "timestamp": "2026-02-27T10:02:15Z",
-    "bodyLength": 32
-  },
-  "body": {
-    "group-name": "csc3002f",
-    "message":"Hello everyone."
-  }
-}
-
-
-"""

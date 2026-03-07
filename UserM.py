@@ -127,7 +127,9 @@ class User_management:
         """
         group_chat(group_name, user, text)
 
-        This method is intended to send a message in a group chat context. In its current prototype form, it loops through connected clients and attempts to send the given text to each one. The method appears incomplete because self.clients is not defined in this class.
+        This method is intended to send a message in a group chat context. In its current prototype form,
+        it loops through connected clients and attempts to send the given text to each one. 
+        The method appears incomplete because self.clients is not defined in this class.
         """
 
         # get group method
@@ -141,7 +143,8 @@ class User_management:
         """
         acks(numeric)
 
-        This method converts a numeric acknowledgement code into its string equivalent. In the current implementation, 0 maps to ACK and 1 maps to ERROR.
+        This method converts a numeric acknowledgement code into its string equivalent.
+        In the current implementation, 0 maps to ACK and 1 maps to ERROR.
         """
         ack_error_codes = {0: "ACK", 1: "ERROR"}
         return ack_error_codes.get(numeric)
@@ -151,7 +154,8 @@ class Database_manager:
     """
     Class: Database_manager
 
-    This class handles persistent storage for the prototype system using comma-separated value files. It is responsible for reading user data, verifying users, adding users, managing group information, and refreshing in-memory data from file.
+    This class handles persistent storage for the prototype system using comma-separated value files. 
+    It is responsible for reading user data, verifying users, adding users, managing group information, and refreshing in-memory data from file.
     """
     def __init__(self):
         """
@@ -181,7 +185,9 @@ class Database_manager:
         """
         verify_user(name, password)
 
-        This method verifies whether the given username and password match an existing record in the user database. It refreshes the data, compares the username and password entries row by row, and returns True if a valid match is found. Otherwise, it returns False.
+        This method verifies whether the given username and password match an existing record in the user database. 
+        It refreshes the data, compares the username and password entries row by row, and returns True if a valid match is found.
+        Otherwise, it returns False.
         """
         self.refresh()
         passwords = list(self.server_data['login_password'])
@@ -198,7 +204,8 @@ class Database_manager:
         """
         add_user(name, password)
 
-        This method adds a new user to the database. It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
+        This method adds a new user to the database. 
+        It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
         """
         self.refresh()
         df = pd.DataFrame({"user_name": [name], "login_password": [password]})
@@ -217,7 +224,6 @@ class Database_manager:
     def add_to_group(self, group_name, user):
         """
         add_to_group(group_name, user)
-
         This method adds a single user to a group by refreshing the data and then delegating the actual insertion to add_group.
         """
         self.refresh()
@@ -227,7 +233,8 @@ class Database_manager:
         """
         add_group(column_name, names=[])
 
-        This method creates a group column if it does not already exist and inserts the given list of usernames into that group. If there are not enough rows in the DataFrame, the DataFrame is expanded before inserting the values. The updated group data is then saved back to file.
+        This method creates a group column if it does not already exist and inserts the given list of usernames into that group.
+        If there are not enough rows in the DataFrame, the DataFrame is expanded before inserting the values. The updated group data is then saved back to file.
         """
         self.refresh()
         
@@ -256,7 +263,8 @@ class Database_manager:
         """
         remove_to_group(group_name, user)
 
-        This method removes a user from a specified group by replacing that user's entry with a missing value. After that, it removes any rows that are entirely empty and saves the updated group data back to file.
+        This method removes a user from a specified group by replacing that user's entry with a missing value. 
+        After that, it removes any rows that are entirely empty and saves the updated group data back to file.
         """
         self.refresh()
         self.group_data.loc[self.group_data[group_name] == user, group_name] = np.nan
