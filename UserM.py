@@ -15,10 +15,12 @@ class User_management:
         print("logging in")
         
         user = name
-        self.update_online_users(user)
-
+    
         print(self.online_users)
-        if self.db.check_user(name) and self.db.verify_user(name, password)==True: return self.acks(0) # change this to some ack message
+        if self.db.verify_user(name, password): 
+            self.update_online_users(user)
+            return self.acks(0) # change this to some ack message
+        return self.acks(1)
 
 
     def logout(self, user):
@@ -91,7 +93,7 @@ class Database_manager:
         self.refresh()
         passwords = list(self.server_data['login_password'])
         names = list(self.server_data['user_name'])
-
+        print("names", names, " passwords", passwords)
         i = 0 
         for pw in passwords: 
             if pw==password and names[i]==name:
