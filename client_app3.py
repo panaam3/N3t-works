@@ -468,7 +468,7 @@ def main():
 
         if not client.listener_started:
             threading.Thread(target=client.start_peer_listener, daemon=True).start()
-            time.sleep(0.5)
+            #time.sleep(0.5)
 
         user = input("Enter the username of the person you want to chat with: ").strip()
 
