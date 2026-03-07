@@ -27,9 +27,7 @@ class client_application:
         self.listener_started = False
         self.peer_connected_event = threading.Event()
 
-    # ----------------------------
     # TCP / UDP CONNECTIONS
-    # ----------------------------
     def tcp_connect(self, server_ip, server_port):
         self.server_ip = server_ip
         self.server_port = server_port
@@ -114,9 +112,7 @@ class client_application:
                 print(f"Peer listener stopped: {e}")
                 break
 
-    # ----------------------------
     # MESSAGE BUILDERS
-    # ----------------------------
     def send_command(self, command, body):
         header = {
             "msgType": "COMMAND",
@@ -144,10 +140,7 @@ class client_application:
             "header": header,
             "body": body
         }
-
-    # ----------------------------
     # SOCKET SENDS
-    # ----------------------------
     def send_message_tcp(self, message):
         self.client_socket.send((json.dumps(message) + '\n').encode())
 
@@ -173,9 +166,7 @@ class client_application:
                 self.peer_connected_event.clear()
                 return False
 
-    # ----------------------------
     # MESSAGE RECEIVE / PROCESS
-    # ----------------------------
     def _try_unpack_nested_control(self, message_dict):
         """
         Some server responses are malformed and put a JSON string inside header['command'].
@@ -208,7 +199,8 @@ class client_application:
         command = header.get("command")
 
         if command == "ACK":
-            print("Continue with the next step")
+            #print("Continue with the next step")
+            pass
 
         elif command == "ERROR":
             print("Received ERROR message:", body)
@@ -219,7 +211,7 @@ class client_application:
 
         elif command == "SEND_TEXT":
             display_message = body.get("message", "")
-            print(f"{header.get('senderId', 'Unknown')}: {display_message}")
+            print(f"\n{header.get('senderId', 'Unknown')}: {display_message}")
 
         elif command == "GTEXT_MESSAGE":
             display_message = body.get("message", "")
@@ -242,7 +234,8 @@ class client_application:
             self.peer_connected_event.clear()
 
         else:
-            print("Received:", message_dict)
+            #print("Received:", message_dict)
+            pass
 
     def peer_receive_thread(self):
         buffer = ""
@@ -316,9 +309,7 @@ class client_application:
                 print("Server disconnected.")
                 break
 
-    # ----------------------------
     # CONNECT REQUEST HANDLING
-    # ----------------------------
     def get_connect_message_for_peer(self, timeout=10):
         """
         Wait for either:
@@ -395,9 +386,6 @@ class client_application:
         print("Timeout waiting for connection grant")
         return False
 
-    # ----------------------------
-    # CLEANUP
-    # ----------------------------
     def close_connection(self):
         try:
             if self.peer_socket:
