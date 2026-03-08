@@ -56,7 +56,8 @@ class User_management:
         logout(user)
 
         This method removes a user from the list of online users. 
-        It searches through the stored online user objects, compares their names with the given user, removes the matching entry, and returns a success acknowledgement.
+        It searches through the stored online user objects, compares their names with the given user, removes the matching entry, 
+        and returns a success acknowledgement.
         """
         for usr in self.online_users:
             name, ip = usr.get_user()
@@ -94,6 +95,7 @@ class User_management:
         This method adds a user to an existing group in the database.
         """
         self.db.add_to_group(group_name, user)
+        return self.acks(0)
 
     def exit(self, group_name, user):
         """
@@ -102,6 +104,7 @@ class User_management:
         This method removes a user from an existing group in the database.
         """
         self.db.remove_to_group(group_name, user)
+        return self.acks(0)
 
     def connect_client(self, user2):
         """
@@ -129,15 +132,14 @@ class User_management:
 
         This method is intended to send a message in a group chat context. In its current prototype form,
         it loops through connected clients and attempts to send the given text to each one. 
-        The method appears incomplete because self.clients is not defined in this class.
         """
+        names = self.db.get_group_members(group_name)
+        if len(names)!=0: return names
+            
+        else:
+            print(f"Group {names} does not exist or has zero members")
+            return self.acks(1)
 
-        # get group method
-        for addr, conn in self.clients.items():
-            try:
-                conn.send(text.encode())
-            except:
-                pass
 
     def acks(self, numeric):
         """
@@ -222,41 +224,59 @@ class Database_manager:
         self.group_data = pd.read_csv(self.groups_path)
     
     def add_to_group(self, group_name, user):
-        """
-        add_to_group(group_name, user)
-        This method adds a single user to a group by refreshing the data and then delegating the actual insertion to add_group.
-        """
         self.refresh()
-        self.add_group(group_name, [user])
-        
-    def add_group(self, column_name, names=[]):
-        """
-        add_group(column_name, names=[])
 
-        This method creates a group column if it does not already exist and inserts the given list of usernames into that group.
-        If there are not enough rows in the DataFrame, the DataFrame is expanded before inserting the values. The updated group data is then saved back to file.
-        """
+        if group_name not in self.group_data.columns:
+            self.group_data[group_name] = pd.Series(dtype="object")
+        else:
+            self.group_data[group_name] = self.group_data[group_name].astype("object")
+
+        empty_rows = self.group_data[self.group_data[group_name].isna()].index
+
+        if len(empty_rows) > 0:
+            insert_index = empty_rows[0]
+        else:
+            insert_index = len(self.group_data)
+            self.group_data = pd.concat(
+                [self.group_data, pd.DataFrame(index=[0])],
+                ignore_index=True
+            )
+
+        self.group_data.loc[insert_index, group_name] = user
+        self.group_data.to_csv(self.groups_path, index=False)
+        
+    def add_group(self, column_name, names=None):
+        if names is None:
+            names = []
+
         self.refresh()
-        
-        values_length = len(names)
-        current_length = len(self.group_data)
 
-        # Add column if it doesn't exist
         if column_name not in self.group_data.columns:
-            self.group_data[column_name] = np.nan
+            self.group_data[column_name] = pd.Series(dtype="object")
+        else:
+            self.group_data[column_name] = self.group_data[column_name].astype("object")
+
+        # Find first empty row in this group column
+        empty_rows = self.group_data[self.group_data[column_name].isna()].index
+
+        if len(empty_rows) > 0:
+            start_index = empty_rows[0]
+        else:
+            start_index = len(self.group_data)
+
+        end_index = start_index + len(names)
 
         # Expand dataframe if needed
-        if values_length > current_length:
-            extra_rows = values_length - current_length
+        if end_index > len(self.group_data):
+            extra_rows = end_index - len(self.group_data)
             self.group_data = pd.concat(
                 [self.group_data, pd.DataFrame(index=range(extra_rows))],
                 ignore_index=True
             )
 
-        # Insert values
-        self.group_data.loc[:values_length - 1, column_name] = names
+        # Insert new names starting from first free row
+        self.group_data.loc[start_index:end_index - 1, column_name] = names
 
-        # Save back
         self.group_data.to_csv(self.groups_path, index=False)
 
     def remove_to_group(self, group_name, user):
@@ -273,3 +293,19 @@ class Database_manager:
         self.group_data = self.group_data.dropna(how="all")
 
         self.group_data.to_csv(self.groups_path, index=False)
+
+    
+    def get_group_members(self, group_name):
+        self.refresh()
+        try:
+            group_members = list(self.group_data[group_name])
+            members = []
+            for member in group_members:
+                if pd.notna(member): members.append(member)
+                else: pass
+            
+            return members if len(members)!=0 else []
+
+        except:
+            print(f"Group {group_name} does not exist")
+            return

@@ -71,7 +71,7 @@ class Server:
         join = lambda user, groupID: self.user_man.join(user, groupID)
         exit = lambda user: self.user_man.exit(user)
         connect_request = lambda user2: self.user_man.connect_client(user2)
-        group_message = lambda user1, text: self.user_man.group_chat(user1, text)
+        group_message = lambda group_name: self.user_man.group_chat(group_name)
         create = lambda user, name, chat: self.user_man.create(user, name, chat)
 
         if command == requests.get(1):
@@ -132,8 +132,18 @@ class Server:
 
         if command == requests.get(8):
             user, groupID, msg = data
-            ack_responce = group_message(user, groupID, msg)
-            return ack_responce
+            names_or_ack = group_message(groupID)
+            try:
+                for name in names_or_ack:
+                    for addr, conn in self.clients.items():
+                        try:
+                            msg = self.build_control_message("GTEXT_MESSAGE", 2002, 0, {"group-name":groupID, "message":msg}, "DATA", user)
+                            self.send_to_client(conn, msg)
+                        except:
+                            pass
+            except:
+                print("error occured") 
+                return ack_responce
 
     def parse_json(self, raw_json):
         """
@@ -235,7 +245,7 @@ class Server:
         # Convert dict JSON string bytes (ready for TCP send)
         return json.dumps(message)
 
-    def build_control_message(self, command, seq_no, status_code, body):
+    def build_control_message(self, command, seq_no, status_code, body, msgType= "CONTROL", senderID="server"):
         """
         build_control_message(command, seq_no, status_code,
         body)
@@ -255,7 +265,7 @@ class Server:
         body_length = len(body_json.encode()) if body else 0
 
         header = {
-            "msgType": "CONTROL",
+            "msgType": msgType,
             "command": command,
             "status_code": status_code,
             "version": "MMMP/1.0",
