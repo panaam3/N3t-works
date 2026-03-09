@@ -61,7 +61,8 @@ class Server:
             5: "JOIN",
             6: "EXIT",
             7: "CONNECT_REQUEST",
-            8: "GTEXT_MESSAGE"
+            8: "GTEXT_MESSAGE",
+            9: "FILE_TRANSFER"
         }
 
         # user functions
@@ -73,6 +74,7 @@ class Server:
         connect_request = lambda user2: self.user_man.connect_client(user2)
         group_message = lambda group_name: self.user_man.group_chat(group_name)
         create = lambda user, name, chat: self.user_man.create(user, name, chat)
+        
 
         if command == requests.get(1):
             x, y = data
@@ -144,6 +146,36 @@ class Server:
             except:
                 print("error occured") 
                 return ack_responce
+            
+
+        if command==requests.get(9):
+            # group, filename, filetype
+            group, filename, filetype, filesize = data
+            save_path = f"files/{filetype}/{filename}"
+            got = 0
+            with open(save_path, "wb") as f:
+                while got< filesize:
+                    packet = Server.get_userSocket(sender_id).recv(filesize)
+                    if not packet:
+                        break
+                    f.write(packet)
+                    got+=len(packet)
+
+            group_members = self.user_man.db.get_group_members(group)
+            msg = self.build_control_message("FILE_TRANSFER", 10, 0, {"sender":sender_id,"filename":filename, "filetype":filetype, "filesize":filesize})
+            
+            for member in group_members:
+                self.send_to_client(Server.get_userSocket(member), msg) # alert clients a file is on the way by giving the file details
+            
+            with open(save_path, "rb") as f:
+                data = f.read()
+
+            for member in group_members:
+                self.send_to_client(Server.get_userSocket(member), data, True)
+            
+            return self.user_man.acks(1)
+
+            
 
     def parse_json(self, raw_json):
         """
@@ -284,7 +316,7 @@ class Server:
 
         return json.dumps(message)
 
-    def send_to_client(self, connection_socket, data):
+    def send_to_client(self, connection_socket, data, files=False):
         """
         send_to_client(connection_socket, data)
 
@@ -293,9 +325,10 @@ class Server:
         that message boundaries can be detected correctly on
         the receiving side.
         """
+        if files: connection_socket.sendall(data.encode())
         connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
 
-    def receive_client_data(self, connection_socket, num=1):
+    def receive_client_data(self, connection_socket, num=1, username=""):
         """
         receive_client_data(connection_socket, num=1)
 
@@ -336,7 +369,10 @@ class Server:
                             self.send_to_client(connection_socket, ctrl_msg)
 
                 except (BrokenPipeError, ConnectionResetError, OSError):
-                    print("disconnected")
+                    addr = Server.users_addr.pop(username)
+                    Server.users_connectionsockets.pop(username)
+                    print("client with address", addr, "disconnected")
+                    self.user_man.update_online_users(username, 1)
                     break
                 except ValueError as e:
                     print(f"Bad message received: {e}")
@@ -386,7 +422,6 @@ class Server:
             if command == "CONNECT_REQUEST":
                 ack = self.response(sender_id, command, body_tuple)
 
-            # can only be a group message on the server side
             if msg_type == "DATA":
                 # add a handler here for possible errors in version2
                 ack = self.response(sender_id, command, body_tuple)
@@ -452,7 +487,7 @@ class Server:
             print(Server.users_addr)
             threading.Thread(
                 target=self.receive_client_data,
-                args=(connection_socket, 1),
+                args=(connection_socket, 1, username),
                 daemon=True
             ).start()
 

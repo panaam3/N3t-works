@@ -25,13 +25,18 @@ class User_management:
         self.online_users = []  # list of USER OBJECTS (class user [from client app], user:={name: ip address})
         self.db = Database_manager()
 
-    def update_online_users(self, user):
+    def update_online_users(self, user, num = 0):
         """
         update_online_users(user)
 
         This method adds a user to the list of currently online users.
+
+        num = {0, or any number}
+        0 - add a client
+        any number - remove them 
         """
-        self.online_users.append(user)
+        if num==0: self.online_users.append(user)
+        else: self.online_users.remove(user)
 
     def login(self, name, password):
         """
@@ -126,7 +131,7 @@ class User_management:
 
         return None, self.acks(1)  # user currently not online, must send an offline message
 
-    def group_chat(self, group_name, user, text):
+    def group_chat(self, group_name):
         """
         group_chat(group_name, user, text)
 
@@ -140,7 +145,6 @@ class User_management:
             print(f"Group {names} does not exist or has zero members")
             return self.acks(1)
 
-
     def acks(self, numeric):
         """
         acks(numeric)
@@ -151,6 +155,16 @@ class User_management:
         ack_error_codes = {0: "ACK", 1: "ERROR"}
         return ack_error_codes.get(numeric)
 
+    def get_file(self, filepath): # return the file byte size and the data
+        try:
+            with open(filepath, "rb") as f:
+                data = f.read()
+            return len(data), data # bytes of the data
+        except:
+            print("File not found")
+
+    
+        
 
 class Database_manager:
     """
@@ -167,8 +181,12 @@ class Database_manager:
         """
         self.file_path = 'database.csv'
         self.groups_path = 'groups_file.csv'
+
+        self.sent_data_path = 'sent_data.csv'
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
+
+        self.sent_data = pd.read_csv(self.sent_data_path)
 
     def check_user(self, name):
         """
@@ -222,6 +240,7 @@ class Database_manager:
         """
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
+        self.offline_data = pd.read_csv(self.sent_data_path)
     
     def add_to_group(self, group_name, user):
         self.refresh()
@@ -309,3 +328,17 @@ class Database_manager:
         except:
             print(f"Group {group_name} does not exist")
             return
+        
+
+    def record_data(self, sender, receiver, datatype, sent_time):
+        self.refresh()
+        row = {"sender_id": sender,
+                "receiver_id": receiver,
+                "data_type": datatype,
+                "time_stamp": sent_time
+               }
+        
+        new_row = pd.DataFrame([row])
+        self.sent_data = pd.concat([self.sent_data, new_row], ignore_index=True)
+
+        self.sent_data.to_csv(self.sent_data_path, index=False)

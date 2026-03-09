@@ -732,3 +732,12 @@ body {
     "filetype": "type of the file being sent",
     "fileSize": "size of the file in bytes"}
 """
+
+"""fileTypes:
+
+images
+audio
+videos
+documents
+other
+"""
