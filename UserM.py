@@ -126,7 +126,7 @@ class User_management:
 
         return None, self.acks(1)  # user currently not online, must send an offline message
 
-    def group_chat(self, group_name, user, text):
+    def group_chat(self, group_name):
         """
         group_chat(group_name, user, text)
 
@@ -140,7 +140,6 @@ class User_management:
             print(f"Group {names} does not exist or has zero members")
             return self.acks(1)
 
-
     def acks(self, numeric):
         """
         acks(numeric)
@@ -151,6 +150,14 @@ class User_management:
         ack_error_codes = {0: "ACK", 1: "ERROR"}
         return ack_error_codes.get(numeric)
 
+    def get_file(self, filepath): # return the file byte size and the data
+        try:
+            with open(filepath, "rb") as f:
+                data = f.read()
+            return data # bytes of the data
+        except:
+            print("File not found")
+        
 
 class Database_manager:
     """
