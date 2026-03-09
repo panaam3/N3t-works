@@ -154,9 +154,11 @@ class User_management:
         try:
             with open(filepath, "rb") as f:
                 data = f.read()
-            return data # bytes of the data
+            return len(data), data # bytes of the data
         except:
             print("File not found")
+
+    
         
 
 class Database_manager:
@@ -174,8 +176,12 @@ class Database_manager:
         """
         self.file_path = 'database.csv'
         self.groups_path = 'groups_file.csv'
+
+        self.sent_data_path = 'offline_data.csv'
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
+
+        self.sent_data = pd.read_csv(self.offline_data_path)
 
     def check_user(self, name):
         """
@@ -229,6 +235,7 @@ class Database_manager:
         """
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
+        self.offline_data = pd.read_csv(self.offline_data_path)
     
     def add_to_group(self, group_name, user):
         self.refresh()
@@ -316,3 +323,17 @@ class Database_manager:
         except:
             print(f"Group {group_name} does not exist")
             return
+        
+
+    def record_data(self, sender, receiver, datatype, sent_time):
+        self.refresh()
+        row = {"sender_id": sender,
+                "receiver_id": receiver,
+                "data_type": datatype,
+                "time_stamp": sent_time
+               }
+        
+        new_row = pd.DataFrame([row])
+        self.sent_data = pd.concat([self.sent_data, new_row], ignore_index=True)
+
+        self.sent_data.to_csv(self.sent_data_path, index=False)
