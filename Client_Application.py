@@ -431,7 +431,7 @@ class client_application:
             "time_stamp": off_timestamp
         }
 
-        filename = 'offline_data.csv'
+        filename = 'chat_history.csv'
         with open(filename, 'r', newline='') as file:
             reader = csv.reader(file)
             headers = next(reader)
@@ -457,7 +457,7 @@ class client_application:
             "time_stamp": off_timestamp
         }
 
-        filename = 'offline_data.csv'
+        filename = 'chat_history.csv'
         with open(filename, 'r', newline='') as file:
             reader = csv.reader(file)
             headers = next(reader)
