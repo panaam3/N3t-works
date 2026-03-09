@@ -328,7 +328,7 @@ class Server:
         if files: connection_socket.sendall(data.encode())
         connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
 
-    def receive_client_data(self, connection_socket, num=1):
+    def receive_client_data(self, connection_socket, num=1, username=""):
         """
         receive_client_data(connection_socket, num=1)
 
@@ -369,7 +369,10 @@ class Server:
                             self.send_to_client(connection_socket, ctrl_msg)
 
                 except (BrokenPipeError, ConnectionResetError, OSError):
-                    print("disconnected")
+                    addr = Server.users_addr.pop(username)
+                    Server.users_connectionsockets.pop(username)
+                    print("client with address", addr, "disconnected")
+                    self.user_man.update_online_users(username, 1)
                     break
                 except ValueError as e:
                     print(f"Bad message received: {e}")
@@ -484,7 +487,7 @@ class Server:
             print(Server.users_addr)
             threading.Thread(
                 target=self.receive_client_data,
-                args=(connection_socket, 1),
+                args=(connection_socket, 1, username),
                 daemon=True
             ).start()
 

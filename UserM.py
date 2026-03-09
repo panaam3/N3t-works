@@ -25,13 +25,18 @@ class User_management:
         self.online_users = []  # list of USER OBJECTS (class user [from client app], user:={name: ip address})
         self.db = Database_manager()
 
-    def update_online_users(self, user):
+    def update_online_users(self, user, num = 0):
         """
         update_online_users(user)
 
         This method adds a user to the list of currently online users.
+
+        num = {0, or any number}
+        0 - add a client
+        any number - remove them 
         """
-        self.online_users.append(user)
+        if num==0: self.online_users.append(user)
+        else: self.online_users.remove(user)
 
     def login(self, name, password):
         """
@@ -177,11 +182,11 @@ class Database_manager:
         self.file_path = 'database.csv'
         self.groups_path = 'groups_file.csv'
 
-        self.sent_data_path = 'offline_data.csv'
+        self.sent_data_path = 'sent_data.csv'
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
 
-        self.sent_data = pd.read_csv(self.offline_data_path)
+        self.sent_data = pd.read_csv(self.sent_data_path)
 
     def check_user(self, name):
         """
@@ -235,7 +240,7 @@ class Database_manager:
         """
         self.server_data = pd.read_csv(self.file_path)
         self.group_data = pd.read_csv(self.groups_path)
-        self.offline_data = pd.read_csv(self.offline_data_path)
+        self.offline_data = pd.read_csv(self.sent_data_path)
     
     def add_to_group(self, group_name, user):
         self.refresh()
