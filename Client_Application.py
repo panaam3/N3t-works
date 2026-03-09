@@ -668,3 +668,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+body {
+    "target": "name of person receiving the file",
+    "fileSize": "size of the file in bytes",}
+"""
