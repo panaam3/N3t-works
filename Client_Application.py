@@ -672,5 +672,7 @@ if __name__ == "__main__":
 """
 body {
     "target": "name of person receiving the file",
-    "fileSize": "size of the file in bytes",}
+    "fileName": "name of the file being sent",
+    "filetype": "type of the file being sent",
+    "fileSize": "size of the file in bytes"}
 """
