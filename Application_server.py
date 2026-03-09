@@ -166,10 +166,16 @@ class Server:
             
             for member in group_members:
                 self.send_to_client(Server.get_userSocket(member), msg) # alert clients a file is on the way by giving the file details
-                
-        
             
+            with open(save_path, "rb") as f:
+                data = f.read()
 
+            for member in group_members:
+                self.send_to_client(Server.get_userSocket(member), data, True)
+            
+            return self.user_man.acks(1)
+
+            
 
     def parse_json(self, raw_json):
         """
@@ -310,7 +316,7 @@ class Server:
 
         return json.dumps(message)
 
-    def send_to_client(self, connection_socket, data):
+    def send_to_client(self, connection_socket, data, files=False):
         """
         send_to_client(connection_socket, data)
 
@@ -319,6 +325,7 @@ class Server:
         that message boundaries can be detected correctly on
         the receiving side.
         """
+        if files: connection_socket.sendall(data.encode())
         connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
 
     def receive_client_data(self, connection_socket, num=1):
