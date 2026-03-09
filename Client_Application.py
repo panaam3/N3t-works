@@ -1,10 +1,12 @@
 # client
+from fileinput import filename
 from socket import *
 import datetime
 import time
 import json
 import threading
 import queue
+import csv
 
 
 class client_application:
@@ -210,6 +212,7 @@ class client_application:
         elif command == "SEND_TEXT":
             display_message = body.get("message", "")
             print(f"\n{header.get('senderId', 'Unknown')}: {display_message}")
+            self.offline_data_rec(message_dict)
 
         elif command == "GTEXT_MESSAGE":
             display_message = body.get("message", "")
@@ -411,7 +414,58 @@ class client_application:
 
         self.peer_connected_event.clear()
         print("Connection is closed")
+    
+    def offline_data_rec(self, message):
+        header = message['header']
+        body = message['body']
 
+        off_sender = header.get("senderId", "Unknown")
+        off_receiver = self.username
+        off_message = body.get("message", "")
+        off_timestamp = header.get("timestamp", "")
+
+        new_row_dict = {
+            "sender_id": off_sender,
+            "receiver_id": off_receiver,
+            "offline_data": off_message,
+            "time_stamp": off_timestamp
+        }
+
+        filename = 'offline_data.csv'
+        with open(filename, 'r', newline='') as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+
+        with open(filename, 'a', newline='') as file:
+            writer = csv.writer(file)
+            row = [new_row_dict.get(header, '') for header in headers]
+            writer.writerow(row)
+
+    def offline_data_send(self, target_user, message):
+        header = message['header']
+        body = message['body']
+
+        off_sender = self.username
+        off_receiver = target_user
+        off_message = body.get("message", "")
+        off_timestamp = header.get("timestamp", "")
+
+        new_row_dict = {
+            "sender_id": off_sender,
+            "receiver_id": off_receiver,
+            "offline_data": off_message,
+            "time_stamp": off_timestamp
+        }
+
+        filename = 'offline_data.csv'
+        with open(filename, 'r', newline='') as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+
+        with open(filename, 'a', newline='') as file:
+            writer = csv.writer(file)
+            row = [new_row_dict.get(header, '') for header in headers]
+            writer.writerow(row)
 
 def main():
     client = None
@@ -471,13 +525,17 @@ def main():
             time.sleep(0.5)
 
         req_or_accept = int(input("1. Request User\n2. Accept Connection\n").strip())
+        rec_id = None
         if req_or_accept == 1:
             user = input("Enter the username of the person you want to chat with: ").strip()
-
+            rec_id = user
             if not user:
                 print("No username entered.")
                 return
         elif req_or_accept == 2:
+            #still need to figure out how to get the rec_id for offline data
+            #
+            #
             print("Waiting for incoming connection...")
             if not client.peer_connected_event.wait(timeout=30):
                 print("Timed out waiting for connection.")
@@ -511,6 +569,7 @@ def main():
 
             data_message = client.send_data("SEND_TEXT", {"message": message})
             sent_ok = client.send_message_peer(data_message)
+            client.offline_data_send(rec_id, data_message)
 
             if not sent_ok:
                 print("Message could not be sent.")
@@ -557,7 +616,7 @@ def main():
             message = input("You: ")
             gmessage = client.send_data(
                 "GTEXT_MESSAGE",
-                {"group_name": group_name, "message": message}
+                {"group-name": group_name, "message": message}
             )
             client.send_message_tcp(gmessage)
 
