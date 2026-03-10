@@ -1,0 +1,5 @@
+For media sharing a TCP connection is made between client A and the server. Client A then requests connection with client B from the server. After both clients are connected, they both can start sharing media between them using peer-to-peer architecture.
+
+TCP is used because it is reliable and ensures connection requests and sessions are exchanged correctly. P2P architecture is used for media sharing so that we reduce server load, minimise latency and improve scalability since large media can't pass through server.
+
+This design increases system complexity since the application has to manage both client server and P2P connection
