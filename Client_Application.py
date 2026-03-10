@@ -1,6 +1,7 @@
 # client
-from fileinput import filename
+import os
 from socket import *
+import struct
 import datetime
 import time
 import json
@@ -214,9 +215,20 @@ class client_application:
             print(f"\n{header.get('senderId', 'Unknown')}: {display_message}")
             self.offline_data_rec(message_dict)
 
+        elif command == "FILE_TRANSFER":
+            filename = body.get("fileName")
+            filesize = body.get("fileSize")
+
+            print(f"\nReceiving file: {filename} ({filesize} bytes)")
+
+            with self.peer_lock:
+                sock = self.peer_socket
+            if sock:
+                self.receive_file(sock, filename, filesize)
+
         elif command == "GTEXT_MESSAGE":
             display_message = body.get("message", "")
-            group_name = body.get("group_name", "GROUP")
+            group_name = body.get("group-name", "GROUP")
             print(f"{group_name}-{header.get('senderId', 'Unknown')}: {display_message}")
 
         elif command == "VIEW_ONLINE":
@@ -466,6 +478,43 @@ class client_application:
             writer = csv.writer(file)
             row = [new_row_dict.get(header, '') for header in headers]
             writer.writerow(row)
+    
+    def send_file(self, filepath, type, target):
+        filename = os.path.basename(filepath)
+        filesize = os.path.getsize(filepath)
+
+        body = {"target": target, "fileName": filename, "fileType": type, "fileSize": filesize}
+        message = self.send_data("FILE_TRANSFER", body)
+
+        with self.peer_lock:
+            receiver_socket = self.peer_socket
+
+        if receiver_socket is None:
+            print("Peer disconnected.")
+            return
+        receiver_socket.sendall((json.dumps(message) + "\n").encode())
+
+        with open(filepath, "rb") as file:
+            while True:
+                data = file.read(4096)
+                if not data:
+                    break
+                receiver_socket.sendall(data)
+
+        print("File sent successfully")
+
+    def receive_file(self, sock, filename, filesize):
+        received_bytes = 0
+        with open(f"received_{filename}", "wb") as file:
+            while received_bytes < filesize:
+                chunk = sock.recv(min(4096, filesize - received_bytes))
+
+                if not chunk:
+                    break
+
+                file.write(chunk)
+                received_bytes += len(chunk)
+        print(f"Received file {filename}")
 
 def main():
     client = None
@@ -566,6 +615,13 @@ def main():
                     break
 
             message = input("You: ")
+
+            if message == "FILE_TRANSFER":
+                filepath = input("Enter the file path: ").strip()
+                filetype = input("Enter the file type (image, audio, video, document, other): ").strip()
+
+                client.send_file(filepath, client.peer_socket, filetype, rec_id)
+                continue
 
             data_message = client.send_data("SEND_TEXT", {"message": message})
             sent_ok = client.send_message_peer(data_message)
