@@ -1,7 +1,6 @@
 # client
 import os
 from socket import *
-import struct
 import datetime
 import time
 import json
@@ -230,6 +229,16 @@ class client_application:
             display_message = body.get("message", "")
             group_name = body.get("group-name", "GROUP")
             print(f"{group_name}-{header.get('senderId', 'Unknown')}: {display_message}")
+        
+        elif command == "GFILE_TRANSFER":
+            filename = body.get("fileName")
+            filesize = body.get("fileSize")
+
+            print(f"\nReceiving file: {filename} ({filesize} bytes)")
+
+            sock = self.client_socket
+            if sock:
+                self.receive_file(sock, filename, filesize)
 
         elif command == "VIEW_ONLINE":
             online_users = body.get("online_users", [])
@@ -674,6 +683,14 @@ def main():
 
         while True:
             message = input("You: ")
+
+            if message == "FILE_TRANSFER":
+                filepath = input("Enter the file path: ").strip()
+                filetype = input("Enter the file type (images, audios, videos, documents, other): ").strip()
+
+                client.send_file(filepath, filetype, group_name)
+                continue
+
             gmessage = client.send_data(
                 "GTEXT_MESSAGE",
                 {"group-name": group_name, "message": message}
