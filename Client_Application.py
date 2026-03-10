@@ -509,7 +509,7 @@ class client_application:
 
     def receive_file(self, sock, filename, filesize):
         received_bytes = 0
-        with open(f"received_{filename}", "wb") as file:
+        with open(f"{filename}", "wb") as file:
             while received_bytes < filesize:
                 chunk = sock.recv(min(4096, filesize - received_bytes))
 
@@ -622,9 +622,9 @@ def main():
 
             if message == "FILE_TRANSFER":
                 filepath = input("Enter the file path: ").strip()
-                filetype = input("Enter the file type (image, audio, video, document, other): ").strip()
+                filetype = input("Enter the file type (images, audios, videos, documents, other): ").strip()
 
-                client.send_file(filepath, client.peer_socket, filetype, rec_id)
+                client.send_file(filepath, filetype, rec_id)
                 continue
 
             data_message = client.send_data("SEND_TEXT", {"message": message})

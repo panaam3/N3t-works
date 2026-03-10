@@ -1,1 +1,5 @@
 sender_id,receiver_id,offline_data,time_stamp
+Nick,phiwumusa,hi,2026-03-10T17:05:22.739188
+phiwumusa,Nick,hello,2026-03-10T17:06:39.440076
+phiwumusa,Nick,yoew,2026-03-10T17:06:44.049959
+Nick,phiwumusa,EXIT_CHAT,2026-03-10T17:07:13.013161
