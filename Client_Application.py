@@ -235,6 +235,10 @@ class client_application:
             online_users = body.get("online_users", [])
             print("Online users:", online_users)
 
+        elif command == "VIEW_GROUP":
+            groups = body.get("groups", [])
+            print("Groups:", groups)
+
         elif command == "EXIT_CHAT":
             print("The chat has ended by the other party.")
             with self.peer_lock:
@@ -564,7 +568,7 @@ def main():
 
     def main_menu2():
         print("Main Menu:\n")
-        print("1. 1-on-1 chat\n2. Create Group\n3. View Online Users\n4. LOGOUT\n")
+        print("1. 1-on-1 chat\n2. Group Chat\n3. View Online Users\n4. LOGOUT\n")
 
     def one_on_one_chat():
         nonlocal client
@@ -678,6 +682,17 @@ def main():
 
             if message == 'done':
                 break
+    def GROUP_CHAT():
+        nonlocal client
+
+        menu = int(input("1. Create Group\n2. View Group\n").strip())
+
+        if menu == 1:
+            create_group()
+
+        elif menu == 2:
+            view_group_message = client.send_command("VIEW_GROUP", {})
+            client.send_message_tcp(view_group_message)
 
     def view_online_users():
         nonlocal client
