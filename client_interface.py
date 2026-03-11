@@ -542,7 +542,6 @@ class client_application:
         client.send_message_tcp(register_message)
         self.counter += 1
         time.sleep(1)
-        pass
 
     def ilogin(self, username, password):
         if self.counter == 1:
@@ -555,7 +554,7 @@ class client_application:
             )
             client.send_message_tcp(login_message)
             time.sleep(1)
-        pass
+        
 
     def one_on_one_chat_connection(self, peer_username):
         if not self.listener_started:
