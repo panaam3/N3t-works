@@ -609,7 +609,24 @@ class client_application:
         if message == 'done':
             return False
         return True
-    #Not done tho!!!
+
+    def icreate_group(self, group_name, members):
+        create_group_message = self.send_command(
+            "CREATE_GROUP",
+            {"group_name": group_name, "members": members}
+        )
+        self.send_message_tcp(create_group_message)
+
+    def iview_online_users(self):
+        request_message = self.send_command("VIEW_ONLINE", "")
+        self.send_message_tcp(request_message)
+
+    def ilogout(self):
+        logout_message = self.send_command("LOGOUT", "")
+        self.send_message_tcp(logout_message)
+        time.sleep(0.5)
+        self.close_connection()
+
 
 def main():
     client = None
