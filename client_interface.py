@@ -557,7 +557,7 @@ class client_application:
             time.sleep(1)
         pass
 
-    def one_on_one_chat(self, peer_username):
+    def one_on_one_chat_connection(self, peer_username):
         if not self.listener_started:
             threading.Thread(target=self.start_peer_listener, daemon=True).start()
             time.sleep(0.5)
@@ -577,7 +577,39 @@ class client_application:
             if not connected:
                 print("Could not establish peer connection.")
                 return
-        pass
+
+    def send_message_121(self, message, rec_id):
+        data_message = self.send_data("SEND_TEXT", {"message": message})
+        sent_ok = self.send_message_peer(data_message)
+        self.offline_data_send(rec_id, data_message)
+
+        if not sent_ok:
+            print("Message could not be sent.")
+            return False       
+
+        if message == "EXIT_CHAT":
+            with self.peer_lock:
+                try:
+                    if self.peer_socket:
+                        self.peer_socket.close()
+                except:
+                    pass
+                self.peer_socket = None
+            self.peer_connected_event.clear()
+            return False
+        return True 
+    
+    def send_message_group(self, message, group_name):
+        gmessage = self.send_data(
+            "GTEXT_MESSAGE",
+            {"group-name": group_name, "message": message}
+        )
+        self.send_message_tcp(gmessage)
+
+        if message == 'done':
+            return False
+        return True
+    #Not done tho!!!
 
 def main():
     client = None
