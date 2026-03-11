@@ -757,19 +757,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-"""
-body {
-    "target": "name of person receiving the file",
-    "fileName": "name of the file being sent",
-    "filetype": "type of the file being sent",
-    "fileSize": "size of the file in bytes"}
-"""
-
-"""fileTypes:
-
-images
-audio
-videos
-documents
-other
-"""
