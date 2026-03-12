@@ -92,6 +92,8 @@ class User_management:
         This method creates a new group chat. 
         The creator is added to the beginning of the group member list, and the full group is then stored in the database.
         """
+        groups = self.db.group_data.columns
+        if group_name in groups: return self.acks(1)
         chat_users = [user] + chat_users
         self.db.add_group(group_name, chat_users)
         return self.acks(0)
@@ -274,7 +276,6 @@ class Database_manager:
             names = []
 
         self.refresh()
-
         if column_name not in self.group_data.columns:
             self.group_data[column_name] = pd.Series(dtype="object")
         else:

@@ -178,7 +178,10 @@ class Server:
 
         if command==requests.get(10):
             users= self.user_man.get_online_users()
-            if len(users)!=0: return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
+
+            if len(users)!=0: 
+                print(users)
+                return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
             else: return self.build_control_message("ONLINE_USERS", 0, 1)
 
     def parse_json(self, raw_json):
