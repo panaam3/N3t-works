@@ -669,15 +669,15 @@ def main():
                 members.append(member)
 
         create_group_message = client.send_command(
-            "CREATE_GROUP",
-            {"group-name": group_name, "members": members}
+            "CREATE",
+            {"user": client.username, "group-name": group_name, "members": members}
         )
         client.send_message_tcp(create_group_message)
 
         message = input("Enter the message to the group ('done' to finish): ")
         gmessage = client.send_data(
             "GTEXT_MESSAGE",
-            {"group-name": group_name, "message": message}
+            {"user": client.username, "group-name": group_name, "message": message}
         )
         client.send_message_tcp(gmessage)
 
@@ -693,7 +693,7 @@ def main():
 
             gmessage = client.send_data(
                 "GTEXT_MESSAGE",
-                {"group-name": group_name, "message": message}
+                {"user": client.username, "group-name": group_name, "message": message}
             )
             client.send_message_tcp(gmessage)
 
@@ -737,7 +737,7 @@ def main():
                         # Send leave notification
                         leave_msg = client.send_data(
                             "GTEXT_MESSAGE",
-                            {"group-name": group_name, "message": "left the chat"}
+                            {"user": client.username, "group-name": group_name, "message": "left the chat"}
                         )
                         client.send_message_tcp(leave_msg)
                         
@@ -748,7 +748,7 @@ def main():
                         # Send regular message
                         gmessage = client.send_data(
                             "GTEXT_MESSAGE",
-                            {"group-name": group_name, "message": message}
+                            {"user": client.username, "group-name": group_name, "message": message}
                         )
                         client.send_message_tcp(gmessage)
                     time.sleep(0.8) 
