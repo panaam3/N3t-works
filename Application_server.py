@@ -80,13 +80,13 @@ class Server:
         if command == requests.get(1):
             x, y = data
             ack_responce = login(x, y)
-            return "logout"
+            return ack_responce
 
         if command == requests.get(2):
             user, = data
             ack_responce = logout(user, sender_id)
             Server.get_userSocket(sender_id).close()
-            return ack_responce
+            return "logout"
 
         if command == requests.get(3):
             x, y = data
