@@ -32,7 +32,7 @@ class Server:
         self.start_server()
 
     users_connectionsockets = {}  # identify or map sockets with with username
-    users_addr = {}  # port numbers identified or mapped with username, username: addr = (ip, port)
+    users_addr = {}  # port numbers identified or mapped with username, {username: addr = (ip, port)}
 
     # Function that processes requests and returns responses to the client application
     """
@@ -136,9 +136,9 @@ class Server:
             names_or_ack = group_message(groupID)
             try:
                 for name in names_or_ack:
-                    for addr, conn in self.clients.items():
+                    for username, conn in list(Server.users_connectionsockets.items()):
                         try:
-                            msg = self.build_control_message("GTEXT_MESSAGE", 2002, 0, {"group-name":groupID, "message":msg}, "DATA", user)
+                            msg = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
                             self.send_to_client(conn, msg)
                         except:
                             pass

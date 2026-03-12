@@ -13,4 +13,4 @@ d.pop(1)
 
 a = [1,2,3,"hi"]
 a.remove("hi")
-print(a)
+print(list({1:"a", 2:"b"}.items()))
