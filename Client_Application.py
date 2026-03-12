@@ -655,10 +655,8 @@ def main():
                 client.peer_connected_event.clear()
                 break
 
-    def create_group():
+    def create_group(group_name=None):
         nonlocal client
-
-        group_name = input("Enter the group name: ").strip()
         members = []
 
         while True:
@@ -702,14 +700,46 @@ def main():
     def GROUP_CHAT():
         nonlocal client
 
-        menu = int(input("1. Create Group\n2. View Group\n").strip())
+        menu = int(input("1. Create Group\n2. View Group\n3. listen for group messages").strip())
+        group_name = input("Enter the group name: ").strip()
 
         if menu == 1:
-            create_group()
+            create_group(group_name)
 
         elif menu == 2:
             view_group_message = client.send_command("VIEW_GROUP", {})
             client.send_message_tcp(view_group_message)
+        
+        elif menu == 3:
+            #listen for group messages
+            while True:
+                message = input("You: ")
+
+                if message == "FILE_TRANSFER":
+                    filepath = input("Enter the file path: ").strip()
+                    filetype = input("Enter the file type (images, audios, videos, documents, other): ").strip()
+
+                    client.send_file(filepath, filetype, group_name)
+                    continue
+
+                gmessage = client.send_data(
+                    "GTEXT_MESSAGE",
+                    {"group-name": group_name, "message": message}
+                )
+                client.send_message_tcp(gmessage)
+
+                if message == "EXIT_CHAT":
+                    with client.peer_lock:
+                        try:
+                            if client.peer_socket:
+                                client.peer_socket.close()
+                        except:
+                            pass
+                        client.peer_socket = None
+                    client.peer_connected_event.clear()
+                    break
+
+                pass
 
     def view_online_users():
         nonlocal client
@@ -742,7 +772,7 @@ def main():
         if choice2 == '1':
             one_on_one_chat()
         elif choice2 == '2':
-            create_group()
+            GROUP_CHAT()
         elif choice2 == '3':
             view_online_users()
         elif choice2 == '4':
