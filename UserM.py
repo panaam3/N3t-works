@@ -38,6 +38,9 @@ class User_management:
         if num==0: self.online_users.append(user)
         else: self.online_users.remove(user)
 
+    def get_online_users(self):
+        return self.online_users
+
     def login(self, name, password):
         """
         login(name, password)
