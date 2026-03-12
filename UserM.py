@@ -201,7 +201,7 @@ class Database_manager:
         self.refresh()
         names = list(self.server_data['user_name'])
         for n in names:
-            if n == name.lower():
+            if n.lower() == name.lower():
                 return True
         return False
     
@@ -216,10 +216,9 @@ class Database_manager:
         self.refresh()
         passwords = list(self.server_data['login_password'])
         names = list(self.server_data['user_name'])
-        print("names", names, " passwords", passwords)
         i = 0
         for pw in passwords:
-            if pw == password and names[i] == name.lower():
+            if pw == password and names[i].lower() == name.lower():
                 return True
             i += 1
         return False

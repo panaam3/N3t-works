@@ -402,7 +402,6 @@ class Server:
 
                     bool, login_msg = self.process_data(raw_message)
 
-            
                     self.send_to_client(connection_socket, login_msg)
 
                     client_json = self.parse_json(raw_message)
@@ -492,7 +491,8 @@ class Server:
         while True:
             connection_socket, addr = self.server_socket.accept()  # accepts clients establishing connections
             print("Connected to client")
-            bool , username = self.receive_client_data(connection_socket, 0)
+            bool, username = self.receive_client_data(connection_socket, 0)
+            print(bool)
             if bool:
                 Server.users_addr[username] = addr
                 Server.users_connectionsockets[username] = connection_socket
