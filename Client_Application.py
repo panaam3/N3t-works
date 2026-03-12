@@ -673,15 +673,19 @@ def main():
             {"user": client.username, "group-name": group_name, "members": members}
         )
         client.send_message_tcp(create_group_message)
+        time.sleep(1)
 
+        '''
         message = input("Enter the message to the group ('done' to finish): ")
         gmessage = client.send_data(
             "GTEXT_MESSAGE",
             {"user": client.username, "group-name": group_name, "message": message}
         )
         client.send_message_tcp(gmessage)
+        '''
+        in_group_chat = True
 
-        while True:
+        while in_group_chat:
             message = input("You: ")
 
             if message == "FILE_TRANSFER":
@@ -697,7 +701,7 @@ def main():
             )
             client.send_message_tcp(gmessage)
 
-            if message == 'done':
+            if message == 'EXIT_CHAT':
                 break
     def GROUP_CHAT():
         nonlocal client
@@ -714,7 +718,7 @@ def main():
             
         elif menu == 3:
             group_name = input("Enter the group name to join: ").strip()
-            
+            time.sleep(1.5)
             print(f"\n=== Joined group: {group_name} ===")
             
             #flag for the chat loop
