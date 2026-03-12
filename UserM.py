@@ -66,10 +66,7 @@ class User_management:
         It searches through the stored online user objects, compares their names with the given user, removes the matching entry, 
         and returns a success acknowledgement.
         """
-        for usr in self.online_users:
-            name, ip = usr.get_user()
-            if user == name:
-                self.update_online_users(user, 1)
+        self.update_online_users(user, 1)
         print("logging out")
         return self.acks(0)
     

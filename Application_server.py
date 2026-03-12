@@ -69,7 +69,6 @@ class Server:
         # user functions
         login = lambda x, y: self.user_man.login(x, y)
         register = lambda x, y: self.user_man.register(x, y)
-        logout = lambda user: self.user_man.logout(user)
         join = lambda user, groupID: self.user_man.join(user, groupID)
         exit = lambda user: self.user_man.exit(user)
         connect_request = lambda user2: self.user_man.connect_client(user2)
@@ -82,19 +81,14 @@ class Server:
             ack_responce = login(x, y)
             return ack_responce
 
-        if command == requests.get(2):
-            user, = data
-            ack_responce = logout(user, sender_id)
-            Server.users_connectionsockets.get(sender_id).close()
-            Server.users_connectionsockets.pop(sender_id)
-            Server.users_addr.pop(sender_id)
-            self.user_man.update_online_users(sender_id, 1)
-            return "logout"
 
         if command == requests.get(3):
             x, y = data
             ack_responce = register(x, y)
             return ack_responce
+        
+        if command == requests.get(2):
+            return "logout"
 
         if command == requests.get(4):
             user, name, members = data
@@ -314,7 +308,7 @@ class Server:
             "status_code": status_code,
             "version": "MMMP/1.0",
             "seqNo": seq_no,
-            "senderId": "server",
+            "senderId": senderID,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "bodyLength": body_length
         }
@@ -415,6 +409,12 @@ class Server:
                     except ValueError:
                         print("-")
                         return False
+                    
+        self.user_man.logout(username)
+        Server.users_connectionsockets.get(username).close()
+        Server.users_connectionsockets.pop(username)
+        Server.users_addr.pop(username)
+        # self.user_man.update_online_users(username, 1)
         print(f"finished session for client {username}.")
 
     def process_data(self, raw_data):  # raw_data is a JSON
