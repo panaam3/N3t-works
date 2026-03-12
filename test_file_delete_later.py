@@ -11,4 +11,6 @@ d = {1:"hi", 2:"no"}
 
 d.pop(1)
 
-print(d)
+a = [1,2,3,"hi"]
+a.remove("hi")
+print(a)

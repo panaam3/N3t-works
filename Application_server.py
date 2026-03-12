@@ -85,7 +85,10 @@ class Server:
         if command == requests.get(2):
             user, = data
             ack_responce = logout(user, sender_id)
-            Server.get_userSocket(sender_id).close()
+            Server.users_connectionsockets.get(sender_id).close()
+            Server.users_connectionsockets.pop(sender_id)
+            Server.users_addr.pop(sender_id)
+            self.user_man.update_online_users(sender_id, 1)
             return "logout"
 
         if command == requests.get(3):
