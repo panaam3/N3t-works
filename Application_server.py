@@ -437,6 +437,15 @@ class Server:
                     {"ERROR": "an error occured, error code 1"}
                 )
 
+            elif command == "VIEW_ONLINE":
+                users= self.user_man.get_online_users()
+
+                if len(users)!=0: 
+                    print(users)
+                    return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
+                else: 
+                    return self.build_control_message("ONLINE_USERS", 0, 1)                
+
             elif msg_type == "COMMAND" and command != "CONNECT_REQUEST":
                 # print(body_tuple)
                 ack = self.response(sender_id, command, body_tuple) 
