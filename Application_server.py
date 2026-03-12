@@ -62,7 +62,8 @@ class Server:
             6: "EXIT",
             7: "CONNECT_REQUEST",
             8: "GTEXT_MESSAGE",
-            9: "FILE_TRANSFER"
+            9: "FILE_TRANSFER",
+            10: "VIEW_ONLINE"
         }
 
         # user functions
@@ -175,7 +176,10 @@ class Server:
             
             return self.user_man.acks(1)
 
-            
+        if command==requests.get(10):
+            users= self.user_man.get_online_users()
+            if len(users)!=0: return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
+            else: return self.build_control_message("ONLINE_USERS", 0, 1)
 
     def parse_json(self, raw_json):
         """
@@ -422,6 +426,8 @@ class Server:
             if command == "CONNECT_REQUEST":
                 ack = self.response(sender_id, command, body_tuple)
 
+            if command=="VIEW_ONLINE":
+                return self.response(sender_id, command, body_tuple)
             if msg_type == "DATA":
                 # add a handler here for possible errors in version2
                 ack = self.response(sender_id, command, body_tuple)
