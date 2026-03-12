@@ -81,9 +81,9 @@ class User_management:
         This method registers a new user by adding their username and password to the database.
          After registration, it returns a success acknowledgement.
         """
-        self.db.add_user(user, password)
-        print("registering")
-        return self.acks(0)
+        if self.db.add_user(user, password): return self.acks(0)
+        else:
+            return self.acks(1)
 
     def create(self, user, group_name, chat_users=[]):
         """
@@ -231,9 +231,11 @@ class Database_manager:
         It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
         """
         self.refresh()
+        if self.check_user(name)==True:return False
         df = pd.DataFrame({"user_name": [name], "login_password": [password]})
         df.to_csv(self.file_path, mode="a", header=False, index=False)
         self.refresh()
+        return True
 
     def refresh(self):
         """
