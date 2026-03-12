@@ -764,7 +764,7 @@ def main():
     else:
         print("Invalid choice.")
         return
-
+    
     while True:
         main_menu2()
         choice2 = input("Enter your choice: ").strip()

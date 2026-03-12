@@ -80,11 +80,12 @@ class Server:
         if command == requests.get(1):
             x, y = data
             ack_responce = login(x, y)
-            return ack_responce
+            return "logout"
 
         if command == requests.get(2):
             user, = data
             ack_responce = logout(user, sender_id)
+            Server.get_userSocket(sender_id).close()
             return ack_responce
 
         if command == requests.get(3):
@@ -372,14 +373,15 @@ class Server:
 
                         print("connected, everything good")
                         ctrl_msg = self.process_data(raw_message)
-
-                        if ctrl_msg:
+                        if ctrl_msg=="logout":
+                            break
+                        else:
                             self.send_to_client(connection_socket, ctrl_msg)
 
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     addr = Server.users_addr.pop(username)
                     Server.users_connectionsockets.pop(username)
-                    print("client with address", addr, "disconnected")
+                    print("client with address", addr, "and username:", username, "disconnected")
                     self.user_man.update_online_users(username, 1)
                     break
                 except ValueError as e:
@@ -396,17 +398,21 @@ class Server:
 
                 while '\n' in buffer:
                     raw_message, buffer = buffer.split('\n', 1)
+                    try:
+                        if not raw_message.strip():
+                            continue
 
-                    if not raw_message.strip():
-                        continue
+                        bool, login_msg = self.process_data(raw_message)
 
-                    bool, login_msg = self.process_data(raw_message)
+                        self.send_to_client(connection_socket, login_msg)
 
-                    self.send_to_client(connection_socket, login_msg)
-
-                    client_json = self.parse_json(raw_message)
-                    username = client_json[0]
-                    return bool, username
+                        client_json = self.parse_json(raw_message)
+                        username = client_json[0]
+                        return bool, username
+                    except ValueError:
+                        print("-")
+                        return False
+        print(f"finished session for client {username}.")
 
     def process_data(self, raw_data):  # raw_data is a JSON
         """
@@ -441,10 +447,11 @@ class Server:
                 users= self.user_man.get_online_users()
 
                 if len(users)!=0: 
-                    print(users)
-                    return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
+                    print("*********ONLINE USERS**********")
+                    print(self.build_control_message("VIEW_ONLINE", 0, 0, {"users":users}))
+                    return self.build_control_message("VIEW_ONLINE", 0, 0, {"users":users})
                 else: 
-                    return self.build_control_message("ONLINE_USERS", 0, 1)                
+                    return self.build_control_message("VIEW_ONLINE", 0, 1)                
 
             elif msg_type == "COMMAND" and command != "CONNECT_REQUEST":
                 # print(body_tuple)
@@ -461,7 +468,8 @@ class Server:
 
             if self.user_man.acks(0) == ack:
                 return self.build_control_message(ack, 100, 0, {"": ""})
-            
+            elif ack=="logout":
+                return "logout"
             return self.build_control_message(
                 ack,
                 100,
