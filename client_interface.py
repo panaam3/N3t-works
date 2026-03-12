@@ -16,6 +16,7 @@ class client_application:
         self.username = username
         self.ip_addr = ip_addr
         self.peer_port = peer_port
+        self.counter = 0
 
         self.client_socket = None
         self.udp_socket = None
@@ -528,6 +529,103 @@ class client_application:
                 file.write(chunk)
                 received_bytes += len(chunk)
         print(f"Received file {filename}")
+
+    def iregister(self, username, password):
+        #get username and password from text line
+        client = client_application(username)
+        client.tcp_connect(self.server_ip, self.server_port)
+        client.udp_connect(self.server_ip, self.server_port)
+        register_message = client.send_command(
+            "REGISTER",
+            {"username": client.username, "password": password}
+        )
+        client.send_message_tcp(register_message)
+        self.counter += 1
+        time.sleep(1)
+
+    def ilogin(self, username, password):
+        if self.counter == 1:
+            client = client_application(username)
+            client.tcp_connect(self.server_ip, self.server_port)
+            client.udp_connect(self.server_ip, self.server_port)
+            login_message = client.send_command(
+                "LOGIN",
+                {"username": client.username, "password": password}
+            )
+            client.send_message_tcp(login_message)
+            time.sleep(1)
+        
+
+    def one_on_one_chat_connection(self, peer_username):
+        if not self.listener_started:
+            threading.Thread(target=self.start_peer_listener, daemon=True).start()
+            time.sleep(0.5)
+        if not self.peer_connected_event.wait(timeout=30):
+                return
+        if self.peer_connected_event.is_set():
+            print("A peer is already connected. Starting chat.")
+        else:
+            connect_request_message = self.send_command(
+                "CONNECT_REQUEST",
+                {"target_user": peer_username}
+            )
+            self.send_message_tcp(connect_request_message)
+
+            connected = self.get_connect_message_for_peer(timeout=10)
+
+            if not connected:
+                print("Could not establish peer connection.")
+                return
+
+    def send_message_121(self, message, rec_id):
+        data_message = self.send_data("SEND_TEXT", {"message": message})
+        sent_ok = self.send_message_peer(data_message)
+        self.offline_data_send(rec_id, data_message)
+
+        if not sent_ok:
+            print("Message could not be sent.")
+            return False       
+
+        if message == "EXIT_CHAT":
+            with self.peer_lock:
+                try:
+                    if self.peer_socket:
+                        self.peer_socket.close()
+                except:
+                    pass
+                self.peer_socket = None
+            self.peer_connected_event.clear()
+            return False
+        return True 
+    
+    def send_message_group(self, message, group_name):
+        gmessage = self.send_data(
+            "GTEXT_MESSAGE",
+            {"group-name": group_name, "message": message}
+        )
+        self.send_message_tcp(gmessage)
+
+        if message == 'done':
+            return False
+        return True
+
+    def icreate_group(self, group_name, members):
+        create_group_message = self.send_command(
+            "CREATE_GROUP",
+            {"group_name": group_name, "members": members}
+        )
+        self.send_message_tcp(create_group_message)
+
+    def iview_online_users(self):
+        request_message = self.send_command("VIEW_ONLINE", "")
+        self.send_message_tcp(request_message)
+
+    def ilogout(self):
+        logout_message = self.send_command("LOGOUT", "")
+        self.send_message_tcp(logout_message)
+        time.sleep(0.5)
+        self.close_connection()
+
 
 def main():
     client = None

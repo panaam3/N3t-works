@@ -241,12 +241,12 @@ class client_application:
                 self.receive_file(sock, filename, filesize)
 
         elif command == "VIEW_ONLINE":
-            online_users = body.get("online_users", [])
-            print("Online users:", online_users)
+            online_users = body.get("users", [])
+            print("Online Users: ", online_users)
 
         elif command == "VIEW_GROUP":
             groups = body.get("groups", [])
-            print("Groups:", groups)
+            print("Groups: ", groups)
 
         elif command == "EXIT_CHAT":
             print("The chat has ended by the other party.")
