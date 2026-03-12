@@ -10,10 +10,10 @@ import csv
 
 
 class client_application:
-    def __init__(self, username, ip_addr="0.0.0.0", peer_port=8000):
+    def __init__(self, ip_addr="0.0.0.0", peer_port=8000):
         self.server_ip = None
         self.server_port = None
-        self.username = username
+        self.username = None
         self.ip_addr = ip_addr
         self.peer_port = peer_port
         self.counter = 0
@@ -25,6 +25,11 @@ class client_application:
 
         self.message_queue = queue.Queue()
         self.waiting_for_response = False
+
+        self.login_event = threading.Event()
+        self.login_success = False
+        self.login_response = None
+        self.login_error_message = ""
 
         self.peer_lock = threading.Lock()
         self.listener_started = False
@@ -530,31 +535,116 @@ class client_application:
                 received_bytes += len(chunk)
         print(f"Received file {filename}")
 
-    def iregister(self, username, password):
-        #get username and password from text line
-        client = client_application(username)
-        client.tcp_connect(self.server_ip, self.server_port)
-        client.udp_connect(self.server_ip, self.server_port)
-        register_message = client.send_command(
-            "REGISTER",
-            {"username": client.username, "password": password}
-        )
-        client.send_message_tcp(register_message)
-        self.counter += 1
-        time.sleep(1)
-
-    def ilogin(self, username, password):
-        if self.counter == 1:
-            client = client_application(username)
-            client.tcp_connect(self.server_ip, self.server_port)
-            client.udp_connect(self.server_ip, self.server_port)
-            login_message = client.send_command(
-                "LOGIN",
-                {"username": client.username, "password": password}
-            )
-            client.send_message_tcp(login_message)
-            time.sleep(1)
+    def register(self, username, password):
+        """Register a new user"""
+        self.username = username
+        self.tcp_connect(self.server_ip, self.server_port)
+        self.udp_connect(self.server_ip, self.server_port)
         
+        register_message = self.send_command(
+            "REGISTER",
+            {"username": username, "password": password}
+        )
+        self.send_message_tcp(register_message)
+        
+        self.waiting_for_response = True
+        try:
+            response = self.message_queue.get(timeout=5)
+            response_dict = json.loads(response)
+            
+            if response_dict["header"]["command"] == "ACK":
+                return True, "Registration successful"
+            else:
+                return False, str(response_dict.get("body", {}))
+        except queue.Empty:
+            return False, "Registration timeout"
+        finally:
+            self.waiting_for_response = False
+
+    def is_connected(self):
+        """Check if connected to server"""
+        return self.client_socket is not None
+
+    def is_peer_connected(self):
+        """Check if peer is connected"""
+        return self.peer_socket is not None
+        
+    def login_thread(self, username, password):
+        """thread to handle login process"""
+        self.username = username
+        
+        # Connect to server
+        self.tcp_connect(self.server_ip, self.server_port)
+        self.udp_connect(self.server_ip, self.server_port)
+        
+        # Set waiting for response
+        self.waiting_for_response = True
+        
+        # Send login message
+        login_message = self.send_command(
+            "LOGIN",
+            {"username": username, "password": password}
+        )
+        self.send_message_tcp(login_message)
+        
+        # Wait for response from queue
+        try:
+            response = self.message_queue.get(timeout=5)
+            response_dict = json.loads(response)
+            
+            if response_dict["header"]["command"] == "ACK":
+                print("Login successful!")
+                self.login_success = True
+                self.login_response = "ACK"
+            else:
+                self.login_error_message = str(response_dict.get("body", {}))
+                print(f"Login failed: {self.login_error_message}")
+                self.login_success = False
+                self.login_response = "ERROR"
+                
+        except queue.Empty:
+            self.login_error_message = "Login timeout - server not responding"
+            print(self.login_error_message)
+            self.login_success = False
+            self.login_response = "TIMEOUT"
+        except Exception as e:
+            self.login_error_message = f"Login error: {e}"
+            print(self.login_error_message)
+            self.login_success = False
+            self.login_response = "ERROR"
+        finally:
+            self.waiting_for_response = False
+            self.login_event.set()
+        
+        return self.login_success
+
+    def login(self, username, password, timeout=10):
+        """Blocking login that waits for result"""
+        self.login_event.clear()
+        self.login_success = False
+        self.login_error_message = ""
+        
+        login_thread = threading.Thread(
+            target=self.login_thread,
+            args=(username, password),
+            daemon=True
+        )
+        login_thread.start()
+        
+        if not self.login_event.wait(timeout=timeout):
+            return False, "Login process timed out"
+            
+        return self.login_success, self.login_error_message
+
+    def login_async(self, username, password, callback=None):
+        """Non-blocking login with optional callback"""
+        def login_wrapper():
+            success, error = self.login(username, password)
+            if callback:
+                callback(success, error)
+        
+        threading.Thread(target=login_wrapper, daemon=True).start()
+            
 
     def one_on_one_chat_connection(self, peer_username):
         if not self.listener_started:
