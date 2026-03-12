@@ -321,7 +321,7 @@ class client_application:
                 msg = self.client_socket.recv(2048).decode()
 
                 if not msg:
-                    print("Server disconnected.")
+                    print("Server disconnected.1")
                     break
 
                 buffer += msg
@@ -338,7 +338,7 @@ class client_application:
                         self.receive_message(message)
 
             except Exception:
-                print("Server disconnected.")
+                print("Server disconnected.2")
                 break
 
     # CONNECT REQUEST HANDLING
