@@ -244,6 +244,7 @@ class client_application:
             online_users = body.get("users", [])
             print("Online Users: ", online_users)
 
+
         elif command == "VIEW_GROUP":
             groups = body.get("groups", [])
             print("Groups: ", groups)
@@ -313,6 +314,7 @@ class client_application:
         while True:
             try:
                 msg = self.client_socket.recv(2048).decode()
+              #  print(f"\n[Debug] Received raw message: {msg.strip()}")
 
                 if not msg:
                     print("Server disconnected.")
@@ -668,14 +670,14 @@ def main():
 
         create_group_message = client.send_command(
             "CREATE_GROUP",
-            {"group_name": group_name, "members": members}
+            {"group-name": group_name, "members": members}
         )
         client.send_message_tcp(create_group_message)
 
         message = input("Enter the message to the group ('done' to finish): ")
         gmessage = client.send_data(
             "GTEXT_MESSAGE",
-            {"group_name": group_name, "message": message}
+            {"group-name": group_name, "message": message}
         )
         client.send_message_tcp(gmessage)
 
@@ -699,52 +701,73 @@ def main():
                 break
     def GROUP_CHAT():
         nonlocal client
-
-        menu = int(input("1. Create Group\n2. View Group\n3. listen for group messages").strip())
-        group_name = input("Enter the group name: ").strip()
-
+        menu = int(input("1. Create Group\n2. View Groups\n3. Join Group Chat\n").strip())
         if menu == 1:
+            group_name = input("Enter the group name: ").strip()
             create_group(group_name)
 
         elif menu == 2:
             view_group_message = client.send_command("VIEW_GROUP", {})
             client.send_message_tcp(view_group_message)
-        
+            print("Request sent. Check above for group list.")
+            time.sleep(1)
+            
         elif menu == 3:
-            #listen for group messages
-            while True:
-                message = input("You: ")
-
-                if message == "FILE_TRANSFER":
-                    filepath = input("Enter the file path: ").strip()
-                    filetype = input("Enter the file type (images, audios, videos, documents, other): ").strip()
-
-                    client.send_file(filepath, filetype, group_name)
-                    continue
-
-                gmessage = client.send_data(
-                    "GTEXT_MESSAGE",
-                    {"group-name": group_name, "message": message}
-                )
-                client.send_message_tcp(gmessage)
-
-                if message == "EXIT_CHAT":
-                    with client.peer_lock:
-                        try:
-                            if client.peer_socket:
-                                client.peer_socket.close()
-                        except:
-                            pass
-                        client.peer_socket = None
-                    client.peer_connected_event.clear()
+            group_name = input("Enter the group name to join: ").strip()
+            
+            print(f"\n=== Joined group: {group_name} ===")
+            
+            #flag for the chat loop
+            in_group_chat = True
+            
+            while in_group_chat:
+                try:
+                    message = input("You: ")
+                    
+                    if message == "FILE_TRANSFER":
+                        filepath = input("Enter the file path: ").strip()
+                        filetype = input("Enter the file type: ").strip()
+                        
+                        # For group file transfers, you might need a different command
+                        # Check if your server supports GFILE_TRANSFER
+                        client.send_file(filepath, filetype, group_name)
+                        continue
+                        
+                    elif message == "EXIT_CHAT":
+                        # Send leave notification
+                        leave_msg = client.send_data(
+                            "GTEXT_MESSAGE",
+                            {"group-name": group_name, "message": "left the chat"}
+                        )
+                        client.send_message_tcp(leave_msg)
+                        
+                        in_group_chat = False
+                        break
+                        
+                    else:
+                        # Send regular message
+                        gmessage = client.send_data(
+                            "GTEXT_MESSAGE",
+                            {"group-name": group_name, "message": message}
+                        )
+                        client.send_message_tcp(gmessage)
+                    time.sleep(0.8) 
+                        
+                except KeyboardInterrupt:
+                    print("\nLeaving group chat...")
+                    in_group_chat = False
                     break
-
-                pass
-
+                except Exception as e:
+                    print(f"Error in group chat: {e}")
+                    in_group_chat = False
+                    break
+            
+            print("Returned to main menu.")
     def view_online_users():
         nonlocal client
         request_message = client.send_command("VIEW_ONLINE", "")
         client.send_message_tcp(request_message)
+        time.sleep(1)
 
     def logout():
         nonlocal client
