@@ -49,13 +49,12 @@ class User_management:
         If the credentials are correct, the user is added to the online users list and a success acknowledgement is returned. 
         Otherwise, an error acknowledgement is returned.
         """
-        print("logging in")
         
-        user = name
-    
-        print(self.online_users)
+        if name in self.online_users:
+            return self.acks(1)
+        
         if self.db.verify_user(name, password): 
-            self.update_online_users(user)
+            self.update_online_users(name)
             return self.acks(0)  # change this to some ack message
         return self.acks(1)
 
@@ -70,7 +69,7 @@ class User_management:
         for usr in self.online_users:
             name, ip = usr.get_user()
             if user == name:
-                self.online_users.remove(usr)
+                self.update_online_users(user, 1)
         print("logging out")
         return self.acks(0)
     
@@ -220,7 +219,7 @@ class Database_manager:
         print("names", names, " passwords", passwords)
         i = 0
         for pw in passwords:
-            if pw == password and names[i] == name:
+            if pw == password and names[i] == name.lower():
                 return True
             i += 1
         return False
@@ -233,7 +232,7 @@ class Database_manager:
         It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
         """
         self.refresh()
-        if self.check_user(name)==True:return False
+        if self.check_user(name.lower())==True:return False
         df = pd.DataFrame({"user_name": [name], "login_password": [password]})
         df.to_csv(self.file_path, mode="a", header=False, index=False)
         self.refresh()
@@ -348,3 +347,7 @@ class Database_manager:
         self.sent_data = pd.concat([self.sent_data, new_row], ignore_index=True)
 
         self.sent_data.to_csv(self.sent_data_path, index=False)
+
+    
+# 196.47.245.85
+  

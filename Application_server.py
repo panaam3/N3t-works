@@ -182,7 +182,8 @@ class Server:
             if len(users)!=0: 
                 print(users)
                 return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
-            else: return self.build_control_message("ONLINE_USERS", 0, 1)
+            else: 
+                return self.build_control_message("ONLINE_USERS", 0, 1)
 
     def parse_json(self, raw_json):
         """
@@ -399,12 +400,14 @@ class Server:
                     if not raw_message.strip():
                         continue
 
-                    login_msg = self.process_data(raw_message)
+                    bool, login_msg = self.process_data(raw_message)
+
+            
                     self.send_to_client(connection_socket, login_msg)
 
                     client_json = self.parse_json(raw_message)
                     username = client_json[0]
-                    return username
+                    return bool, username
 
     def process_data(self, raw_data):  # raw_data is a JSON
         """
@@ -422,42 +425,41 @@ class Server:
         else:
             sender_id, msg_type, command, timestamp, body_length, body_tuple, body = self.parse_json(raw_data)
 
-            if msg_type == "COMMAND" and command != "CONNECT_REQUEST":
-                print(body_tuple)
+            if command=="LOGIN":
                 ack = self.response(sender_id, command, body_tuple)  # (name, password)
+                print(body)
+                if self.user_man.acks(0) == ack:
+                    return True, self.build_control_message(ack, 100, 0, {"": ""})
+            
+                return False, self.build_control_message(
+                    ack,
+                    100,
+                    1,
+                    {"ERROR": "an error occured, error code 1"}
+                )
 
-            if command == "CONNECT_REQUEST":
+            elif msg_type == "COMMAND" and command != "CONNECT_REQUEST":
+                # print(body_tuple)
+                ack = self.response(sender_id, command, body_tuple) 
+
+            elif command == "CONNECT_REQUEST":
                 ack = self.response(sender_id, command, body_tuple)
 
-            if command=="VIEW_ONLINE":
+            elif command=="VIEW_ONLINE":
                 return self.response(sender_id, command, body_tuple)
-            if msg_type == "DATA":
+            elif msg_type == "DATA":
                 # add a handler here for possible errors in version2
                 ack = self.response(sender_id, command, body_tuple)
 
             if self.user_man.acks(0) == ack:
                 return self.build_control_message(ack, 100, 0, {"": ""})
+            
             return self.build_control_message(
                 ack,
                 100,
                 1,
                 {"ERROR": "an error occured, error code 1"}
             )
-
-    def listen_for_data(self, connection_socket):
-        """
-        listen_for_data(connection_socket)
-
-        This method creates and starts a new thread that
-        listens for incoming data from a connected client.
-        It allows the server to handle client communication
-        concurrently.
-        """
-        client_threads = threading.Thread(
-            target=self.receive_client_data,
-            args=(connection_socket,)
-        )
-        client_threads.start()
 
     def get_userSocket(username):
         """
@@ -490,15 +492,18 @@ class Server:
         while True:
             connection_socket, addr = self.server_socket.accept()  # accepts clients establishing connections
             print("Connected to client")
-            username = self.receive_client_data(connection_socket, 0)
-            Server.users_addr[username] = addr
-            Server.users_connectionsockets[username] = connection_socket
-            print(Server.users_addr)
-            threading.Thread(
-                target=self.receive_client_data,
-                args=(connection_socket, 1, username),
-                daemon=True
-            ).start()
+            bool , username = self.receive_client_data(connection_socket, 0)
+            if bool:
+                Server.users_addr[username] = addr
+                Server.users_connectionsockets[username] = connection_socket
+                print(Server.users_addr)
+                threading.Thread(
+                    target=self.receive_client_data,
+                    args=(connection_socket, 1, username),
+                    daemon=True
+                ).start()
+            else:
+                pass
 
     def terminate(self):  # server closes
         """
