@@ -244,6 +244,7 @@ class client_application:
             online_users = body.get("users", [])
             print("Online Users: ", online_users)
 
+
         elif command == "VIEW_GROUP":
             groups = body.get("groups", [])
             print("Groups: ", groups)
@@ -313,6 +314,7 @@ class client_application:
         while True:
             try:
                 msg = self.client_socket.recv(2048).decode()
+              #  print(f"\n[Debug] Received raw message: {msg.strip()}")
 
                 if not msg:
                     print("Server disconnected.")
@@ -749,6 +751,7 @@ def main():
                             {"group-name": group_name, "message": message}
                         )
                         client.send_message_tcp(gmessage)
+                    time.sleep(0.8) 
                         
                 except KeyboardInterrupt:
                     print("\nLeaving group chat...")
@@ -764,6 +767,7 @@ def main():
         nonlocal client
         request_message = client.send_command("VIEW_ONLINE", "")
         client.send_message_tcp(request_message)
+        time.sleep(1)
 
     def logout():
         nonlocal client
