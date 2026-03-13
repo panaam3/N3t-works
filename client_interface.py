@@ -650,33 +650,40 @@ class client_application:
         if not self.listener_started:
             threading.Thread(target=self.start_peer_listener, daemon=True).start()
             time.sleep(0.5)
-        if not self.peer_connected_event.wait(timeout=30):
-                return
-        if self.peer_connected_event.is_set():
-            print("A peer is already connected. Starting chat.")
-        else:
-            connect_request_message = self.send_command(
+
+        if peer_username:
+            req_msg = self.send_command(
                 "CONNECT_REQUEST",
                 {"target_user": peer_username}
             )
-            self.send_message_tcp(connect_request_message)
-
+            self.send_message_tcp(req_msg)
+            
             connected = self.get_connect_message_for_peer(timeout=10)
+            if connected:
+                #"Peer connected! Starting chat.")
+                return True
+            else:
+                return False
 
-            if not connected:
-                print("Could not establish peer connection.")
-                return
+        else:
+            if self.peer_connected_event.wait(timeout=30):
+                return True
+            else:
+            #Timed out waiting for connection.")
+                return False
 
     def send_message_121(self, message, rec_id):
+        with self.peer_lock:
+            if self.peer_socket is None:
+                return False
+            
         data_message = self.send_data("SEND_TEXT", {"message": message})
         sent_ok = self.send_message_peer(data_message)
-        self.offline_data_send(rec_id, data_message)
 
-        if not sent_ok:
-            print("Message could not be sent.")
-            return False       
-
-        if message == "EXIT_CHAT":
+        if sent_ok:
+            self.offline_data_send(rec_id, data_message)
+        
+        if message == "EXIT_CHAT" and sent_ok:
             with self.peer_lock:
                 try:
                     if self.peer_socket:
@@ -686,8 +693,9 @@ class client_application:
                 self.peer_socket = None
             self.peer_connected_event.clear()
             return False
-        return True 
-    
+        
+        return sent_ok
+        
     def send_message_group(self, message, group_name):
         gmessage = self.send_data(
             "GTEXT_MESSAGE",
