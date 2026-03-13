@@ -134,6 +134,7 @@ class Server:
         if command == requests.get(8):
             user, groupID, msg = data
             names_or_ack = group_message(groupID)
+           # names_or_ack = names_or_ack.remove(user)
             print("trying to send message",msg,"to group", groupID )
             try:
                 for name in names_or_ack:
@@ -284,7 +285,7 @@ class Server:
         # Convert dict JSON string bytes (ready for TCP send)
         return json.dumps(message)
 
-    def build_control_message(self, command, seq_no, status_code, body, msgType= "CONTROL", senderID="server"):
+    def build_control_message(self, command, seq_no, status_code, body=None, msgType= "CONTROL", senderID="server"):
         """
         build_control_message(command, seq_no, status_code,
         body)
