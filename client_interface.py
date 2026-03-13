@@ -646,7 +646,7 @@ class client_application:
         threading.Thread(target=login_wrapper, daemon=True).start()
             
 
-    def one_on_one_chat_connection(self, peer_username):
+    def one_on_one_chat_connection(self, peer_username=None):
         if not self.listener_started:
             threading.Thread(target=self.start_peer_listener, daemon=True).start()
             time.sleep(0.5)
