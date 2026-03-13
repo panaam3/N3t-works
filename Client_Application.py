@@ -228,7 +228,6 @@ class client_application:
         elif command == "GTEXT_MESSAGE":
             display_message = body.get("message", "")
             group_name = body.get("group-name", "GROUP")
-            print(f"{group_name}-{header.get('senderId', 'Unknown')}: {display_message}")
         
         elif command == "GFILE_TRANSFER":
             filename = body.get("fileName")
