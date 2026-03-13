@@ -7,7 +7,7 @@ from UserM import User_management as usm
 import json
 from datetime import datetime
 import threading
-
+import time
 
 class Server:
     """
@@ -124,9 +124,13 @@ class Server:
                 0,
                 {"message": addr}
             )
-            print(data)
+            # print(data)
             connection_socket = Server.users_connectionsockets.get(sender_id)
+            target = user2[0]
 
+            print(f"Notifying {target} to start listening")
+            self.send_to_client(Server.get_userSocket(target), self.build_control_message("LISTEN", 1,1))
+            time.sleep(1)
             print("sent peer address")
             self.send_to_client(connection_socket, data)
             return ack_responce
@@ -134,16 +138,16 @@ class Server:
         if command == requests.get(8):
             user, groupID, msg = data
             names_or_ack = group_message(groupID)
-           # names_or_ack = names_or_ack.remove(user)
+            names_or_ack = names_or_ack.remove(sender_id)
             
             try:
                 for name in names_or_ack:
-
                     try:
                         conn = Server.get_userSocket(name)
                         msg = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
                         print("trying to send message '",msg,"' to group :", groupID )
                         self.send_to_client(conn, msg)
+                        return self.user_man.acks(0)
                     except:
                         print(f"Message not sent to Client {name}, with address {Server.get_userAddr(name)}.")
             except:
