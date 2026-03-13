@@ -260,7 +260,7 @@ class client_application:
             self.peer_connected_event.clear()
 
         else:
-            #print("Received:", message_dict)
+            print("Received:", message_dict)
             pass
 
     def peer_receive_thread(self):
@@ -313,7 +313,7 @@ class client_application:
         while True:
             try:
                 msg = self.client_socket.recv(2048).decode()
-              #  print(f"\n[Debug] Received raw message: {msg.strip()}")
+                #print(f"\n[Debug] Received raw message: {msg.strip()}")
 
                 if not msg:
                     print("Server disconnected.")
@@ -764,9 +764,8 @@ def main():
                     print(f"Error in group chat: {e}")
                     in_group_chat = False
                     break
-            
-            print("Returned to main menu.")
             time.sleep(1.5)
+            print("Returned to main menu.")
     def view_online_users():
         nonlocal client
         request_message = client.send_command("VIEW_ONLINE", "")
