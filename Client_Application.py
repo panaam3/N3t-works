@@ -779,6 +779,7 @@ def main():
         client.send_message_tcp(logout_message)
         time.sleep(0.5)
         client.close_connection()
+        #
 
     main_menu1()
     choice = input("Enter your choice: ").strip()
