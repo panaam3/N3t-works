@@ -754,7 +754,7 @@ def main():
                             {"user": client.username, "group-name": group_name, "message": message}
                         )
                         client.send_message_tcp(gmessage)
-                    time.sleep(0.8) 
+                    time.sleep(0.5) 
                         
                 except KeyboardInterrupt:
                     print("\nLeaving group chat...")
@@ -766,6 +766,7 @@ def main():
                     break
             
             print("Returned to main menu.")
+            time.sleep(1.5)
     def view_online_users():
         nonlocal client
         request_message = client.send_command("VIEW_ONLINE", "")
