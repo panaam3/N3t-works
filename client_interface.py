@@ -211,6 +211,11 @@ class client_application:
         elif command == "ERROR":
             print("Received ERROR message:", body)
 
+        elif command == "LISTEN":
+            if not self.listener_started:
+                threading.Thread(target=self.start_peer_listener, daemon=True).start()
+                time.sleep(0.5)
+
         elif command == "PING":
             pong_message = self.send_command("PONG", "")
             self.send_message_udp(pong_message)
@@ -647,11 +652,7 @@ class client_application:
             
 
     def one_on_one_chat_connection(self, peer_username=None):
-        if not self.listener_started:
-            threading.Thread(target=self.start_peer_listener, daemon=True).start()
-            time.sleep(0.5)
-
-        if peer_username:
+        if peer_username is not None:
             req_msg = self.send_command(
                 "CONNECT_REQUEST",
                 {"target_user": peer_username}
@@ -660,16 +661,18 @@ class client_application:
             
             connected = self.get_connect_message_for_peer(timeout=10)
             if connected:
-                #"Peer connected! Starting chat.")
+                print("Peer connected! Starting chat.")
                 return True
             else:
+                print("Not connected")
                 return False
 
         else:
             if self.peer_connected_event.wait(timeout=30):
+                print("Got connection")
                 return True
             else:
-            #Timed out waiting for connection.")
+                print("Timed out waiting for connection.")
                 return False
 
     def send_message_121(self, message, rec_id):
