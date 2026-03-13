@@ -134,14 +134,15 @@ class Server:
         if command == requests.get(8):
             user, groupID, msg = data
             names_or_ack = group_message(groupID)
+            print("trying to send message",msg,"to group", groupID )
             try:
                 for name in names_or_ack:
-                    for username, conn in list(Server.users_connectionsockets.items()):
-                        try:
-                            msg = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
-                            self.send_to_client(conn, msg)
-                        except:
-                            pass
+                    try:
+                        conn = Server.get_userSocket(name)
+                        msg = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
+                        self.send_to_client(conn, msg)
+                    except:
+                        print(f"Message not sent to Client {name}, with address {Server.get_userAddr(name)}.")
             except:
                 print("error occured") 
                 return ack_responce
@@ -332,7 +333,7 @@ class Server:
         the receiving side.
         """
         if files: connection_socket.sendall(data.encode())
-        connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
+        else: connection_socket.send((data + '\n').encode())  # send modified message to the server socket (then back to the current client)
 
     def receive_client_data(self, connection_socket, num=1, username=""):
         """
