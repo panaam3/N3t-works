@@ -312,7 +312,7 @@ class client_application:
         while True:
             try:
                 msg = self.client_socket.recv(2048).decode()
-                #print(f"\n[Debug] Received raw message: {msg.strip()}")
+                print(f"\n[Debug] Received raw message: {msg.strip()}")
 
                 if not msg:
                     print("Server disconnected.")

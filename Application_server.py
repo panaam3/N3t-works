@@ -139,15 +139,15 @@ class Server:
         if command == requests.get(8):
             user, groupID, msg = data
             names_or_ack = group_message(groupID)
-            names_or_ack = names_or_ack.remove(sender_id)
-            
+            print("SENDING TO GROUP MEMBERS:", names_or_ack)
             try:
                 for name in names_or_ack:
+                    print(name)
                     try:
                         conn = Server.get_userSocket(name)
-                        msg = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
+                        msg_j = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
                         print("trying to send message '",msg,"' to group :", groupID )
-                        self.send_to_client(conn, msg)
+                        self.send_to_client(conn, msg_j)
                         return self.user_man.acks(0)
                     except:
                         print(f"Message not sent to Client {name}, with address {Server.get_userAddr(name)}.")
@@ -188,12 +188,13 @@ class Server:
 
             if len(users)!=0: 
                 print(users)
-                return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
+                return self.build_message("ONLINE_USERS", 0, 0, {"users":users})
             else: 
                 return self.build_control_message("ONLINE_USERS", 0, 1)
             
         if command==requests.get(11):
-            return self.build_control_message("VIEW_GROUPS", 1,1,{"groups": self.user_man.db.get_groups()})
+            return self.build_message("VIEW_GROUPS", 1,1,{"groups": self.user_man.db.get_groups()})
+        
     def parse_json(self, raw_json):
         """
         parse_json(raw_json)
@@ -379,7 +380,7 @@ class Server:
                         if not raw_message.strip():
                             continue
 
-                        print("connected, everything good")
+                    
                         ctrl_msg = self.process_data(raw_message)
                         if ctrl_msg=="logout":
                             break
@@ -478,7 +479,8 @@ class Server:
                 return self.response(sender_id, command, body_tuple)
             
             elif command=="VIEW_GROUPS":
-                return self.response(sender_id, command, body_tuple)
+                data = self.response(sender_id, command, body_tuple) 
+                return data
             
             elif msg_type == "DATA":
                 # add a handler here for possible errors in version2
