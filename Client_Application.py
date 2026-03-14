@@ -312,7 +312,7 @@ class client_application:
         while True:
             try:
                 msg = self.client_socket.recv(2048).decode()
-                #print(f"\n[Debug] Received raw message: {msg.strip()}")
+                print(f"\n[Debug] Received raw message: {msg.strip()}")
 
                 if not msg:
                     print("Server disconnected.")
@@ -321,15 +321,15 @@ class client_application:
                 buffer += msg
 
                 while '\n' in buffer:
-                    message, buffer = buffer.split('\n', 1)
+                    msg, buffer = buffer.split('\n', 1)
 
-                    if not message.strip():
+                    if not msg.strip():
                         continue
 
                     if self.waiting_for_response:
-                        self.message_queue.put(message)
+                        self.message_queue.put(msg)
                     else:
-                        self.receive_message(message)
+                        self.receive_message(msg)
 
             except Exception:
                 print("Server disconnected.")
@@ -618,15 +618,6 @@ def main():
         )
         client.send_message_tcp(create_group_message)
         time.sleep(1)
-
-        '''
-        message = input("Enter the message to the group ('done' to finish): ")
-        gmessage = client.send_data(
-            "GTEXT_MESSAGE",
-            {"user": client.username, "group-name": group_name, "message": message}
-        )
-        client.send_message_tcp(gmessage)
-        '''
         in_group_chat = True
 
         while in_group_chat:
