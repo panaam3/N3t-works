@@ -212,7 +212,6 @@ class client_application:
         elif command == "SEND_TEXT":
             display_message = body.get("message", "")
             print(f"\n{header.get('senderId', 'Unknown')}: {display_message}")
-            self.offline_data_rec(message_dict)
 
         elif command == "FILE_TRANSFER":
             filename = body.get("fileName")
@@ -441,58 +440,6 @@ class client_application:
         self.peer_connected_event.clear()
         print("Connection is closed")
     
-    def offline_data_rec(self, message):
-        header = message['header']
-        body = message['body']
-
-        off_sender = header.get("senderId", "Unknown")
-        off_receiver = self.username
-        off_message = body.get("message", "")
-        off_timestamp = header.get("timestamp", "")
-
-        new_row_dict = {
-            "sender_id": off_sender,
-            "receiver_id": off_receiver,
-            "offline_data": off_message,
-            "time_stamp": off_timestamp
-        }
-
-        filename = 'chat_history.csv'
-        with open(filename, 'r', newline='') as file:
-            reader = csv.reader(file)
-            headers = next(reader)
-
-        with open(filename, 'a', newline='') as file:
-            writer = csv.writer(file)
-            row = [new_row_dict.get(header, '') for header in headers]
-            writer.writerow(row)
-
-    def offline_data_send(self, target_user, message):
-        header = message['header']
-        body = message['body']
-
-        off_sender = self.username
-        off_receiver = target_user
-        off_message = body.get("message", "")
-        off_timestamp = header.get("timestamp", "")
-
-        new_row_dict = {
-            "sender_id": off_sender,
-            "receiver_id": off_receiver,
-            "offline_data": off_message,
-            "time_stamp": off_timestamp
-        }
-
-        filename = 'chat_history.csv'
-        with open(filename, 'r', newline='') as file:
-            reader = csv.reader(file)
-            headers = next(reader)
-
-        with open(filename, 'a', newline='') as file:
-            writer = csv.writer(file)
-            row = [new_row_dict.get(header, '') for header in headers]
-            writer.writerow(row)
-    
     def send_file(self, filepath, type, target):
         filename = os.path.basename(filepath)
         filesize = os.path.getsize(filepath)
@@ -639,8 +586,6 @@ def main():
 
             data_message = client.send_data("SEND_TEXT", {"message": message})
             sent_ok = client.send_message_peer(data_message)
-            client.offline_data_send(rec_id, data_message)
-
             if not sent_ok:
                 print("Message could not be sent.")
                 break
