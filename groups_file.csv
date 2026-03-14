@@ -1,4 +1,18 @@
+<<<<<<< HEAD
 Group1,Group2,tell,sab,anything,shark
 brad,Kungawo,Kungawo,Kungawo,,Kungawo
 Phiwumusa,harry,phiwumusa,phiwumusa,phiwumusa,phiwumusa
 style,shawn,Nick,,,
+=======
+<<<<<<< HEAD
+default_group,Unnamed: 1,Group1,Group2,tell,sab,anything,genesis,Kungawo
+,,,brad,Kungawo,Kungawo,Kungawo,Nick,genesis
+,,Phiwumusa,harry,phiwumusa,phiwumusa,phiwumusa,Kungawo,
+,,style,shawn,Nick,,,kenneth,
+=======
+Group1,Group2,tell,sab,anything
+brad,Kungawo,Kungawo,Kungawo,
+Phiwumusa,harry,phiwumusa,phiwumusa,phiwumusa
+style,shawn,Nick,,
+>>>>>>> c777c41fa7a0e1456dfa60ac776b61eaabd221d8
+>>>>>>> 1244545cd1158ba664bcb05d4763d6c0d16b6989
