@@ -330,7 +330,8 @@ class Database_manager:
             print(f"Group {group_name} does not exist")
             return
         
-
+    def get_groups(self):
+        return list(self.group_data.columns)
     def record_data(self, sender, receiver, datatype, sent_time):
         self.refresh()
         row = {"sender_id": sender,
