@@ -380,7 +380,7 @@ class Server:
                         if not raw_message.strip():
                             continue
 
-                    
+                     
                         ctrl_msg = self.process_data(raw_message)
                         if ctrl_msg=="logout":
                             break
@@ -468,7 +468,7 @@ class Server:
                 else: 
                     return self.build_control_message("VIEW_ONLINE", 0, 1)                
 
-            elif msg_type == "COMMAND" and command != "CONNECT_REQUEST":
+            elif msg_type == "COMMAND" and command != "CONNECT_REQUEST" and command!="VIEW_GROUPS":
                 # print(body_tuple)
                 ack = self.response(sender_id, command, body_tuple) 
 
