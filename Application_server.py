@@ -63,7 +63,8 @@ class Server:
             7: "CONNECT_REQUEST",
             8: "GTEXT_MESSAGE",
             9: "FILE_TRANSFER",
-            10: "VIEW_ONLINE"
+            10: "VIEW_ONLINE",
+            11: "VIEW_GROUPS",
         }
 
         # user functions
@@ -190,7 +191,9 @@ class Server:
                 return self.build_control_message("ONLINE_USERS", 0, 0, {"users":users})
             else: 
                 return self.build_control_message("ONLINE_USERS", 0, 1)
-
+            
+        if command==requests.get(11):
+            return self.build_control_message("VIEW_GROUPS", 1,1,{"groups": self.user_man.db.get_groups()})
     def parse_json(self, raw_json):
         """
         parse_json(raw_json)
@@ -473,6 +476,10 @@ class Server:
 
             elif command=="VIEW_ONLINE":
                 return self.response(sender_id, command, body_tuple)
+            
+            elif command=="VIEW_GROUPS":
+                return self.response(sender_id, command, body_tuple)
+            
             elif msg_type == "DATA":
                 # add a handler here for possible errors in version2
                 ack = self.response(sender_id, command, body_tuple)
