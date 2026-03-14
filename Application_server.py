@@ -468,6 +468,10 @@ class Server:
                 else: 
                     return self.build_control_message("VIEW_ONLINE", 0, 1)                
 
+
+            elif command=="VIEW_GROUPS":
+                data = self.response(sender_id, command, body_tuple) 
+                return data
             elif msg_type == "COMMAND" and command != "CONNECT_REQUEST" and command!="VIEW_GROUPS":
                 # print(body_tuple)
                 ack = self.response(sender_id, command, body_tuple) 
@@ -478,9 +482,7 @@ class Server:
             elif command=="VIEW_ONLINE":
                 return self.response(sender_id, command, body_tuple)
             
-            elif command=="VIEW_GROUPS":
-                data = self.response(sender_id, command, body_tuple) 
-                return data
+            
             
             elif msg_type == "DATA":
                 # add a handler here for possible errors in version2
@@ -488,8 +490,10 @@ class Server:
 
             if self.user_man.acks(0) == ack:
                 return self.build_control_message(ack, 100, 0, {"": ""})
+            
             elif ack=="logout":
                 return "logout"
+            
             return self.build_control_message(
                 ack,
                 100,
