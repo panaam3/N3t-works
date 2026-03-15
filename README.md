@@ -1,16 +1,23 @@
 # N3t-works
-introductory to mastery level for networks and the internet 
+CSC3002F, Stage 3 
 
-Stage 2:
+# Required Modules:
+blinker==1.9.0
+click==8.3.1
+Flask==3.1.3
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+Werkzeug==3.1.6
+
 
 # How to run the program:
 
-1. on the terminal, run python Application_server.py first.
-2. Take note of the IP address of the end system acting as the server
-3. Run python client_application.py
-4. Follow prompts 
+1. On runnning the application, A machine should act as a designated server and run the Application_server, by this prompt on the terminal. (python Application_server.py)
+2. Take note of the IP address of the end system acting as the server, as this should be copied into the client machines on the client_interface.py file.
+3. The client(s) on the terminal should prompt python run.py, which will display a link to their default browser
+4. login or register into the application 
 
 
-For stage 2,  functionality is limited to Client-to-Client communication group commiunication will be implemented on the final version, (stage 3), and the terminal texted based interface is merely for demonstration of the protocol and functionality, the actual UI is web based (demonstration vidoe includes a demo of the final UI)
 
 Text displayed by the Application_server.py was for verifying connection, and tracking users.
