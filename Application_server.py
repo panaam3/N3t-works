@@ -62,7 +62,7 @@ class Server:
             6: "EXIT",
             7: "CONNECT_REQUEST",
             8: "GTEXT_MESSAGE",
-            9: "FILE_TRANSFER",
+            9: "GFILE_TRANSFER",
             10: "VIEW_ONLINE",
             11: "VIEW_GROUPS",
         }
@@ -137,20 +137,25 @@ class Server:
             return ack_responce
 
         if command == requests.get(8):
-            user, groupID, msg = data
+            groupID, msg = data
             names_or_ack = group_message(groupID)
             print("SENDING TO GROUP MEMBERS:", names_or_ack)
+            
             try:
                 for name in names_or_ack:
-                    print(name)
-                    try:
-                        conn = Server.get_userSocket(name)
-                        msg_j = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", user)
-                        print("trying to send message '",msg,"' to group :", groupID )
-                        self.send_to_client(conn, msg_j)
-                        return self.user_man.acks(0)
-                    except:
-                        print(f"Message not sent to Client {name}, with address {Server.get_userAddr(name)}.")
+                    if name==sender_id: pass 
+                    else:
+                        print(name)
+                        try:
+                            conn = Server.get_userSocket(name)
+                            msg_j = self.build_control_message("GTEXT_MESSAGE", 0, 0, {"group-name":groupID, "message":msg}, "DATA", sender_id)
+                            print("trying to send message '",msg,"' to group :", groupID )
+                            self.send_to_client(conn, msg_j)
+                            
+                        except:
+                            print(f"Message not sent to Client {name}, with address {Server.get_userAddr(name)}.")
+
+                return self.user_man.acks(0)
             except:
                 print("error occured") 
                 return ack_responce
@@ -170,7 +175,7 @@ class Server:
                     got+=len(packet)
 
             group_members = self.user_man.db.get_group_members(group)
-            msg = self.build_control_message("FILE_TRANSFER", 10, 0, {"sender":sender_id,"filename":filename, "filetype":filetype, "filesize":filesize})
+            msg = self.build_control_message("FILE_TRANSFER", 10, 0, {"target":group,"filename":filename, "filetype":filetype, "filesize":filesize})
             
             for member in group_members:
                 self.send_to_client(Server.get_userSocket(member), msg) # alert clients a file is on the way by giving the file details
@@ -181,7 +186,7 @@ class Server:
             for member in group_members:
                 self.send_to_client(Server.get_userSocket(member), data, True)
             
-            return self.user_man.acks(1)
+            return self.user_man.acks(0)
 
         if command==requests.get(10):
             users= self.user_man.get_online_users()
@@ -395,7 +400,7 @@ class Server:
                     break
                 except ValueError as e:
                     print(f"Bad message received: {e}")
-        else:
+        elif num == 0:
             buffer = ''
             while True:
                 chunk = connection_socket.recv(1024).decode()
@@ -411,16 +416,20 @@ class Server:
                         if not raw_message.strip():
                             continue
 
-                        bool, login_msg = self.process_data(raw_message)
+                        bool, login_msg, server_msg = self.process_data(raw_message)
 
                         self.send_to_client(connection_socket, login_msg)
 
-                        client_json = self.parse_json(raw_message)
-                        username = client_json[0]
-                        return bool, username
+                        if server_msg=="login":
+                            client_json = self.parse_json(raw_message)
+                            username = client_json[0]
+                            return bool, username, server_msg
+                        elif server_msg == 'registered': 
+                            return bool, None, server_msg
+                    
                     except ValueError:
                         print("-")
-                        return False
+                        return False, None
                     
         self.user_man.logout(username)
         Server.users_connectionsockets.get(username).close()
@@ -449,7 +458,7 @@ class Server:
                 ack = self.response(sender_id, command, body_tuple)  # (name, password)
                 print(body)
                 if self.user_man.acks(0) == ack:
-                    return True, self.build_control_message(ack, 100, 0, {"": ""})
+                    return True, self.build_control_message(ack, 100, 0, {"": ""}), "login"
             
                 return False, self.build_control_message(
                     ack,
@@ -457,7 +466,13 @@ class Server:
                     1,
                     {"ERROR": "an error occured, error code 1"}
                 )
-
+            elif command== "REGISTER":
+                ack = self.response(sender_id, command, body_tuple) 
+                if ack == "ACK": 
+                    return True, self.build_control_message(ack, 100, 0, {"Response": "registration sucessful"}), "registered"
+                else:
+                    return False, self.build_control_message(ack, 100, 0, {"": ""}), None
+                
             elif command == "VIEW_ONLINE":
                 users= self.user_man.get_online_users()
 
@@ -532,9 +547,11 @@ class Server:
         while True:
             connection_socket, addr = self.server_socket.accept()  # accepts clients establishing connections
             print("Connected to client")
-            bool, username = self.receive_client_data(connection_socket, 0)
+            bool, username, server_msg = self.receive_client_data(connection_socket, 0)
             print(bool)
-            if bool:
+
+
+            if server_msg=="login" and bool:
                 Server.users_addr[username] = addr
                 Server.users_connectionsockets[username] = connection_socket
                 print(Server.users_addr)
