@@ -14,7 +14,7 @@ Werkzeug==3.1.6
 # How to run the program:
 
 1. On runnning the application, A machine should act as a designated server and run the Application_server, by this prompt on the terminal. (python Application_server.py)
-2. Take note of the IP address of the end system acting as the server, as this should be copied into the client machines on the client_interface.py file.
+2. Take note of the IP address of the end system acting as the server, as this should be copied into the client machines on the .env file along with secret key (check out .env.example).
 3. The client(s) on the terminal should prompt python run.py, which will display a link to their default browser
 4. login or register into the application 
 
