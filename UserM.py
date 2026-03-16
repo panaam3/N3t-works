@@ -227,12 +227,15 @@ class Database_manager:
         This method adds a new user to the database. 
         It refreshes the current data, creates a one-row DataFrame for the new user, appends it to the database file, and then refreshes the in-memory data again.
         """
-        self.refresh()
-        if self.check_user(name.lower())==True:return False
-        df = pd.DataFrame({"user_name": [name], "login_password": [password]})
-        df.to_csv(self.file_path, mode="a", header=False, index=False)
-        self.refresh()
-        return True
+        try:
+            self.refresh()
+            if self.check_user(name.lower())==True: return False
+            df = pd.DataFrame({"user_name": [name], "login_password": [password]})
+            df.to_csv(self.file_path, mode="a", header=False, index=False)
+            self.refresh()
+            return True
+        except:
+            return False
 
     def refresh(self):
         """
